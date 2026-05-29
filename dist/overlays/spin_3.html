@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@700;900&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%;
+  background: transparent !important;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#spin-overlay {
+  width: 580px;
+  background: #000;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 20px;
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  position: relative;
+}
+#spin-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #00fff7, #ff00ff, #00fff7);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: borderGlow 3s linear infinite;
+  background-size: 200% 200%;
+}
+@keyframes borderGlow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+#spin-overlay.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+#spin-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#spin-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #00fff7;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(0,255,247,0.6);
+}
+#spin-badge {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff00ff;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(255,0,255,0.5);
+  text-transform: uppercase;
+}
+#spin-track-wrap {
+  width: 100%;
+  height: 124px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 2px;
+  background: #050505;
+}
+#spin-track-wrap::before,
+#spin-track-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 110px;
+  z-index: 2;
+  pointer-events: none;
+}
+#spin-track-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, #050505 40%, transparent);
+}
+#spin-track-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, #050505 40%, transparent);
+}
+#spin-selector {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 92px;
+  height: 106px;
+  z-index: 10;
+  pointer-events: none;
+}
+#spin-selector::before {
+  content: '▼';
+  position: absolute;
+  top: -17px; left: 50%;
+  transform: translateX(-50%);
+  color: #00fff7;
+  font-size: 10px;
+  text-shadow: 0 0 8px #00fff7;
+}
+#spin-selector::after {
+  content: '▲';
+  position: absolute;
+  bottom: -17px; left: 50%;
+  transform: translateX(-50%);
+  color: #00fff7;
+  font-size: 10px;
+  text-shadow: 0 0 8px #00fff7;
+}
+.sel-corner {
+  position: absolute;
+  width: 10px; height: 10px;
+}
+.sel-corner.tl { top:0; left:0;  border-top: 2px solid #00fff7; border-left: 2px solid #00fff7; }
+.sel-corner.tr { top:0; right:0; border-top: 2px solid #00fff7; border-right: 2px solid #00fff7; }
+.sel-corner.bl { bottom:0; left:0;  border-bottom: 2px solid #00fff7; border-left: 2px solid #00fff7; }
+.sel-corner.br { bottom:0; right:0; border-bottom: 2px solid #00fff7; border-right: 2px solid #00fff7; }
+#spin-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%) translateX(0);
+  will-change: transform;
+}
+.spin-card {
+  min-width: 92px;
+  height: 106px;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #0a0a0a;
+  flex-shrink: 0;
+  transition: transform .2s, background .2s;
+  position: relative;
+}
+.spin-card .ci { font-size: 12px; line-height: 1; color: #222; }
+.spin-card .cn {
+  font-family: 'Orbitron', monospace;
+  font-size: 26px; font-weight: 900; line-height: 1;
+  color: #1a1a1a;
+}
+.spin-card .cl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2px;
+  color: #1a1a1a;
+}
+.spin-card.win-card {
+  background: #050505;
+  transform: scale(1.06);
+}
+.spin-card.win-card.up .cn  { color: #00fff7; text-shadow: 0 0 16px rgba(0,255,247,0.7); }
+.spin-card.win-card.up .ci  { color: #00fff7; text-shadow: 0 0 10px rgba(0,255,247,0.5); }
+.spin-card.win-card.up .cl  { color: #00fff7; }
+.spin-card.win-card.down .cn { color: #ff00ff; text-shadow: 0 0 16px rgba(255,0,255,0.7); }
+.spin-card.win-card.down .ci { color: #ff00ff; text-shadow: 0 0 10px rgba(255,0,255,0.5); }
+.spin-card.win-card.down .cl { color: #ff00ff; }
+.spin-card.win-card.zero .cn { color: #888; }
+.spin-card.win-card.zero .ci { color: #888; }
+.spin-card.win-card.zero .cl { color: #888; }
+#spin-result {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px; font-weight: 900;
+  letter-spacing: 3px;
+  min-height: 30px;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.6) translateY(4px);
+  transition: opacity .35s cubic-bezier(.34,1.56,.64,1),
+              transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+#spin-result.show { opacity: 1; transform: scale(1) translateY(0); }
+#spin-result.up   { color: #00fff7; text-shadow: 0 0 20px rgba(0,255,247,0.6); }
+#spin-result.down { color: #ff00ff; text-shadow: 0 0 20px rgba(255,0,255,0.6); }
+#spin-result.zero { color: #555; }
+#spin-pool-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+.pool-chip {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  color: #333;
+  background: #0a0a0a;
+}
+#scanline {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.08) 3px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 20;
+}
+</style>
+</head>
+<body>
+<div id="spin-overlay">
+  <div id="scanline"></div>
+  <div id="spin-header">
+    <div id="spin-title">Spin</div>
+    <div id="spin-badge">Ready</div>
+  </div>
+  <div id="spin-pool-row"></div>
+  <div style="position:relative;width:100%;">
+    <div id="spin-track-wrap">
+      <div id="spin-selector">
+        <div class="sel-corner tl"></div>
+        <div class="sel-corner tr"></div>
+        <div class="sel-corner bl"></div>
+        <div class="sel-corner br"></div>
+      </div>
+      <div id="spin-track"></div>
+    </div>
+  </div>
+  <div id="spin-result">—</div>
+</div>
+
+<script>
+let lastSeq = -1;
+let isAnim  = false;
+let lastPool = '';
+
+function makeCard(val, winner) {
+  const card = document.createElement('div');
+  const cls  = val > 0 ? 'up' : val < 0 ? 'down' : 'zero';
+  card.className = 'spin-card ' + cls + (winner ? ' win-card' : '');
+  const icon = document.createElement('div');
+  icon.className = 'ci';
+  icon.textContent = val > 0 ? '▲' : val < 0 ? '▼' : '◆';
+  const num = document.createElement('div');
+  num.className = 'cn';
+  num.textContent = val > 0 ? '+' + val : String(val);
+  const lbl = document.createElement('div');
+  lbl.className = 'cl';
+  lbl.textContent = val !== 0 ? 'WIN' : 'ZERO';
+
+  card.append(icon, num, lbl);
+  return card;
+}
+
+function buildDeck(result, pool) {
+  const total = 18, win = 11, deck = [];
+  for (let i = 0; i < total; i++)
+    deck.push(i === win ? result : pool[Math.floor(Math.random() * pool.length)]);
+  return { deck, win };
+}
+
+function runReel(result, pool, onDone) {
+  const track = document.getElementById('spin-track');
+  const resEl = document.getElementById('spin-result');
+  const title = document.getElementById('spin-title');
+  const badge = document.getElementById('spin-badge');
+  const wrap  = document.getElementById('spin-track-wrap');
+
+  track.innerHTML = '';
+  resEl.classList.remove('show', 'up', 'down', 'zero');
+  resEl.textContent = '—';
+
+  const { deck, win } = buildDeck(result, pool);
+  deck.forEach(v => track.appendChild(makeCard(v, false)));
+
+  const cardWidth = 92, gap = 8, step = cardWidth + gap;
+  const centerOffset = (wrap.offsetWidth / 2) - (cardWidth / 2);
+
+  track.style.transition = 'none';
+  track.style.transform  = `translateY(-50%) translateX(${centerOffset}px)`;
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    track.style.transition = 'transform 2.6s cubic-bezier(0.15, 1, 0.3, 1)';
+    track.style.transform  = `translateY(-50%) translateX(${centerOffset - win * step}px)`;
+  }));
+
+  setTimeout(() => {
+    const targetCard = track.children[win];
+    if (targetCard) targetCard.classList.add('win-card');
+
+    const cls  = result > 0 ? 'up' : result < 0 ? 'down' : 'zero';
+    const sign = result > 0 ? '+' : '';
+    resEl.textContent = sign + result + (result > 0 ? ' ▲' : result < 0 ? ' ▼' : '');
+    resEl.classList.add('show', cls);
+
+    title.textContent = result > 0 ? '▲ WIN ' + Math.abs(result) : result < 0 ? '▼ WIN ' + Math.abs(result) : '— ZERO';
+
+    title.style.color = result > 0 ? '#00fff7' : result < 0 ? '#ff00ff' : '#555';
+    title.style.textShadow = result > 0 ? '0 0 12px rgba(0,255,247,0.6)' : result < 0 ? '0 0 12px rgba(255,0,255,0.6)' : 'none';
+    badge.textContent = 'DONE';
+
+    setTimeout(() => { if (onDone) onDone(); }, 1100);
+  }, 2800);
+}
+
+function renderPool(pool) {
+  const row = document.getElementById('spin-pool-row');
+  const key = pool.join(',');
+  if (key === lastPool) return;
+  lastPool = key;
+  row.innerHTML = '';
+  pool.forEach(v => {
+    const chip = document.createElement('div');
+    chip.className = 'pool-chip';
+    chip.textContent = (v > 0 ? '+' : '') + v;
+    row.appendChild(chip);
+  });
+}
+
+function update(s) {
+  if (!s) return;
+  const ov    = document.getElementById('spin-overlay');
+  const badge = document.getElementById('spin-badge');
+  const title = document.getElementById('spin-title');
+
+  const raw  = (s.spinChoices || '0').split(',');
+  const pool = raw.map(x => parseInt(x.trim(), 10)).filter(x => !isNaN(x));
+  if (pool.length === 0) pool.push(0);
+  renderPool(pool);
+
+  const seq = s.spinSeq || 0;
+  if (lastSeq === -1) {
+    lastSeq = seq;
+  } else if (seq !== lastSeq && !isAnim) {
+    lastSeq = seq;
+    isAnim  = true;
+    ov.classList.add('visible');
+    title.textContent = 'SPINNING';
+    title.style.color = '#00fff7';
+    badge.textContent = 'GO!';
+
+    runReel(s.spinResult || 0, pool, () => {
+      setTimeout(() => {
+        ov.classList.remove('visible');
+        badge.textContent = 'Ready';
+        title.textContent = 'Spin';
+        title.style.color = '#00fff7';
+        title.style.textShadow = '0 0 12px rgba(0,255,247,0.6)';
+        isAnim = false;
+      }, 2000);
+    });
+  }
+}
+
+window.addEventListener('storage', () => {
+  const saved = localStorage.getItem('aclass_overlay_settings');
+  if (saved) update(JSON.parse(saved));
+});
+
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'UPDATE_SETTINGS') {
+    update(e.data.settings);
+  }
+});
+
+const saved = localStorage.getItem('aclass_overlay_settings');
+if (saved) update(JSON.parse(saved));
+</script>
+</body>
+</html>

@@ -3,17 +3,22 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 
-// Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+const appPath = app.isPackaged ? path.dirname(app.getPath('exe')) : app.getAppPath();
+
+// Load environment variables (optional for production)
+const dotEnvPath = path.join(__dirname, '../.env');
+if (fs.existsSync(dotEnvPath)) {
+  require('dotenv').config({ path: dotEnvPath });
+}
 
 const WEB_URL = process.env.WEB_URL || 'https://app.aclassstore.com';
 const PRODUCTION_API_URL = process.env.PRODUCTION_API_URL || 'https://api.aclassstore.com';
 
 const { machineIdSync } = require('node-machine-id');
 const { WebcastPushConnection } = require('tiktok-live-connector');
-const { keyboard, Key } = require('@nut-tree-fork/nut-js');
 const { Rcon } = require('rcon-client');
-const { autoUpdater } = require('electron-updater'); // <-- ADDED
+const { autoUpdater } = require('electron-updater');
 const tiktokAuth = require('./tiktokAuth');
 
 // Configure autoUpdater
@@ -56,8 +61,15 @@ const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
 const isMac = process.platform === 'darwin';
 const isWin = process.platform === 'win32';
 
-// Configure nut.js
-keyboard.config.autoDelayMs = 10;
+let keyboard, Key;
+try {
+  const nut = require('@nut-tree-fork/nut-js');
+  keyboard = nut.keyboard;
+  Key = nut.Key;
+  if (keyboard) keyboard.config.autoDelayMs = 10;
+} catch (e) {
+  console.error('[Native] Failed to load nut-js:', e.message);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SSE / Settings helpers
@@ -324,21 +336,37 @@ function createMainWindow() {
     minWidth: 1100,
     minHeight: 680,
     frame: false,
+    show: false, // Don't show until ready
     backgroundColor: '#000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: false // Recommended for nut.js integration if needed
     },
   });
 
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+
   if (isDev) {
-    mainWindow.loadURL(WEB_URL);
+    mainWindow.loadURL(WEB_URL).catch(err => {
+      console.error('Failed to load URL in development:', err);
+    });
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    mainWindow.loadFile(indexPath).catch(err => {
+      console.error('Failed to load index.html in production:', err);
+      // Fallback or show error window
+    });
   }
+
+  // Handle crash or hang
+  mainWindow.webContents.on('render-process-gone', (event, detailed) => {
+    console.error('Renderer process gone:', detailed.reason);
+  });
 }
 
 function createOverlayWindow() {
@@ -357,11 +385,11 @@ function createOverlayWindow() {
     },
   });
 
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
   if (isDev) {
-    overlayWindow.loadURL(`${WEB_URL}/overlay-view`);
+    overlayWindow.loadURL(`${WEB_URL}/overlay-view`).catch(err => console.error(err));
   } else {
-    overlayWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'overlay-view' });
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    overlayWindow.loadFile(indexPath, { hash: 'overlay-view' }).catch(err => console.error(err));
   }
 }
 
@@ -396,7 +424,6 @@ function startLocalServer() {
 
     // Serve static overlay files
     if (req.url.startsWith('/overlays/')) {
-      const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
       const baseDir = isDev
         ? path.join(__dirname, '../../tiklive_pro_web/public')
         : path.join(__dirname, '../dist');

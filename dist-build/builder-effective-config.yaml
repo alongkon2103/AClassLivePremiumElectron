@@ -1,0 +1,35 @@
+directories:
+  output: dist-build
+  buildResources: build
+appId: com.aclassstore.livepro
+productName: AClassLivePro
+win:
+  target:
+    - nsis
+  icon: build/icon.ico
+  artifactName: ${productName}_Setup_${version}.${ext}
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+  icon: build/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: A Class Live Pro
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  uninstallDisplayName: A Class Live Pro
+publish:
+  - provider: github
+    owner: alongkon2103
+    repo: AClassLivePremiumElectron
+    releaseType: release
+files:
+  - filter:
+      - electron/**/*
+      - dist/**/*
+      - package.json
+electronVersion: 28.3.3

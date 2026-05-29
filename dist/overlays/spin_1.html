@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%;
+  background: transparent !important;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#spin-overlay {
+  width: 580px;
+  background: linear-gradient(135deg, #0a0a1a 0%, #0d0a1f 100%);
+  border: 1px solid rgba(139,92,246,0.35);
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px 20px;
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+  pointer-events: none;
+  transition: opacity .32s, transform .32s;
+}
+#spin-overlay.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+#spin-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#spin-title {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #fff;
+  text-transform: uppercase;
+}
+#spin-badge {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  color: #a78bfa;
+  letter-spacing: 1px;
+  background: rgba(139,92,246,0.14);
+  border: 1px solid rgba(139,92,246,0.4);
+  border-radius: 20px;
+  padding: 3px 12px;
+}
+#spin-track-wrap {
+  width: 100%;
+  height: 136px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.25);
+}
+#spin-track-wrap::before,
+#spin-track-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 120px;
+  z-index: 2;
+  pointer-events: none;
+}
+#spin-track-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, #0a0a1a, transparent);
+}
+#spin-track-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, #0a0a1a, transparent);
+}
+#spin-selector {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 96px; 
+  height: 112px;
+  border: 2px solid rgba(168,85,247,0.8); 
+  border-radius: 12px;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(168,85,247,0.4);
+}
+#spin-selector::before {
+  content: '▼';
+  position: absolute;
+  top: -18px; left: 50%;
+  transform: translateX(-50%);
+  color: #a78bfa;
+  font-size: 11px;
+  text-shadow: 0 0 8px #a78bfa;
+}
+#spin-selector::after {
+  content: '▲';
+  position: absolute;
+  bottom: -18px; left: 50%;
+  transform: translateX(-50%);
+  color: #a78bfa;
+  font-size: 11px;
+  text-shadow: 0 0 8px #a78bfa;
+}
+#spin-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  position: absolute;
+  top: 50%;
+  left: 0; 
+  transform: translateY(-50%) translateX(0);
+  will-change: transform;
+}
+.spin-card {
+  min-width: 96px;
+  height: 112px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px solid rgba(255,255,255,0.06);
+  background: rgba(14,12,28,0.9);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.spin-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.07), transparent 60%);
+  pointer-events: none;
+}
+.spin-card .ci { font-size: 20px; line-height: 1; z-index:1; }
+.spin-card .cn {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 32px; font-weight: 900; line-height: 1;
+  z-index: 1;
+}
+.spin-card .cl {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 10px; font-weight: 900;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  z-index: 1;
+}
+.spin-card.up .ci,
+.spin-card.up .cn { color: #a855f7; text-shadow: 0 0 18px rgba(168,85,247,0.6); }
+.spin-card.up .cl { background: #6d28d9; color: #fff; }
+.spin-card.down .ci,
+.spin-card.down .cn { color: #ef4444; text-shadow: 0 0 18px rgba(239,68,68,0.6); }
+.spin-card.down .cl { background: #991b1b; color: #fff; }
+.spin-card.zero .ci,
+.spin-card.zero .cn { color: #64748b; }
+.spin-card.zero .cl { background: #1e293b; color: #94a3b8; }
+.spin-card.win-card {
+  border-color: rgba(168,85,247,0.55);
+  box-shadow:
+    0 0 0 1px rgba(168,85,247,0.3),
+    0 0 30px rgba(168,85,247,0.45),
+    inset 0 0 18px rgba(168,85,247,0.06);
+  transform: scale(1.06);
+  background: rgba(20,12,40,0.97);
+}
+.spin-card.win-card.up { border-color: rgba(168,85,247,0.6); }
+.spin-card.win-card.down {
+  border-color: rgba(239,68,68,0.55);
+  box-shadow:
+    0 0 0 1px rgba(239,68,68,0.3),
+    0 0 30px rgba(239,68,68,0.35),
+    inset 0 0 18px rgba(239,68,68,0.04);
+}
+#spin-result {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 26px; font-weight: 900;
+  letter-spacing: 2px;
+  min-height: 36px;
+  opacity: 0;
+  transform: scale(0.5) translateY(6px);
+  transition: opacity .38s cubic-bezier(.34,1.56,.64,1),
+              transform .38s cubic-bezier(.34,1.56,.64,1);
+}
+#spin-result.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+#spin-pool-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+.pool-chip {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-size: 12px; font-weight: 900;
+  padding: 4px 12px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  transition: opacity .15s, transform .15s;
+}
+.pool-chip.up   { background: rgba(109,40,217,0.3); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+.pool-chip.down { background: rgba(153,27,27,0.3);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.pool-chip.zero { background: rgba(30,41,59,0.5);   color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+</style>
+</head>
+<body>
+<div id="spin-overlay">
+  <div id="spin-header">
+    <div id="spin-title">SPIN WHEEL</div>
+    <div id="spin-badge">READY</div>
+  </div>
+  <div id="spin-pool-row"></div>
+  <div style="position:relative;width:100%;">
+    <div id="spin-track-wrap">
+      <div id="spin-selector"></div>
+      <div id="spin-track"></div>
+    </div>
+  </div>
+  <div id="spin-result">—</div>
+</div>
+
+<script>
+let lastSeq   = -1;
+let isAnim    = false;
+let lastPool  = '';
+
+function makeCard(val, winner) {
+  const card = document.createElement('div');
+  const cls  = val > 0 ? 'up' : val < 0 ? 'down' : 'zero';
+  card.className = 'spin-card ' + cls + (winner ? ' win-card' : '');
+
+  const icon = document.createElement('div');
+  icon.className = 'ci';
+  icon.textContent = val > 0 ? '▲' : val < 0 ? '▼' : '◆';
+
+  const num = document.createElement('div');
+  num.className = 'cn';
+  num.textContent = val > 0 ? '+' + val : String(val);
+
+  const lbl = document.createElement('div');
+  lbl.className = 'cl';
+  lbl.textContent = val !== 0 ? 'WIN' : 'ZERO';
+  card.append(icon, num, lbl);
+  return card;
+}
+
+function buildDeck(result, pool) {
+  const total = 18;
+  const win   = 11;
+  const deck  = [];
+  for (let i = 0; i < total; i++) {
+    deck.push(i === win ? result : pool[Math.floor(Math.random() * pool.length)]);
+  }
+  return { deck, win };
+}
+function runReel(result, pool, onDone) {
+  const track  = document.getElementById('spin-track');
+  const resEl  = document.getElementById('spin-result');
+  const title  = document.getElementById('spin-title');
+  const badge  = document.getElementById('spin-badge');
+  const wrap   = document.getElementById('spin-track-wrap'); 
+
+  track.innerHTML = '';
+  resEl.classList.remove('show');
+  resEl.textContent = '—';
+
+  const { deck, win } = buildDeck(result, pool);
+  deck.forEach((v, i) => track.appendChild(makeCard(v, false))); 
+
+  const cardWidth = 96; 
+  const gap = 10;
+  const step = cardWidth + gap; 
+  
+  const centerOffset = (wrap.offsetWidth / 2) - (cardWidth / 2);
+
+  track.style.transition = 'none';
+  track.style.transform  = `translateY(-50%) translateX(${centerOffset}px)`;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      track.style.transition = 'transform 2.6s cubic-bezier(0.15, 1, 0.3, 1)';
+      const finalX = centerOffset - (win * step);
+      track.style.transform  = `translateY(-50%) translateX(${finalX}px)`;
+    });
+  });
+
+  setTimeout(() => {
+    const targetCard = track.children[win];
+    if (targetCard) targetCard.classList.add('win-card');
+
+    const color = result > 0 ? '#c084fc' : result < 0 ? '#f87171' : '#94a3b8';
+    const sign  = result > 0 ? '+' : '';
+
+    resEl.style.color       = color;
+    resEl.style.textShadow  = `0 0 28px ${color}`;
+    resEl.textContent       = sign + result + (result > 0 ? ' ▲ WIN' : result < 0 ? ' ▼ WIN' : ' — ZERO');
+    resEl.classList.add('show');
+
+    title.textContent = result > 0 ? '▲ WIN ' + Math.abs(result) : result < 0 ? '▼ WIN ' + Math.abs(result) : '— ZERO';
+    title.style.color = color;
+    badge.textContent = 'DONE!';
+
+    setTimeout(() => { if (onDone) onDone(); }, 1100);
+  }, 2800);
+}
+
+function renderPool(pool) {
+  const row = document.getElementById('spin-pool-row');
+  const key = pool.join(',');
+  if (key === lastPool) return;
+  lastPool = key;
+
+  row.innerHTML = '';
+  pool.forEach(v => {
+    const chip = document.createElement('div');
+    chip.className = 'pool-chip ' + (v > 0 ? 'up' : v < 0 ? 'down' : 'zero');
+    chip.dataset.val = String(v);
+    chip.textContent = (v > 0 ? '+' : '') + v;
+    row.appendChild(chip);
+  });
+}
+
+function update(s) {
+  if (!s) return;
+  const ov    = document.getElementById('spin-overlay');
+  const badge = document.getElementById('spin-badge');
+  const title = document.getElementById('spin-title');
+
+  const raw  = (s.spinChoices || '0').split(',');
+  const pool = raw.map(x => parseInt(x.trim(), 10)).filter(x => !isNaN(x));
+  if (pool.length === 0) pool.push(0);
+  renderPool(pool);
+
+  const seq = s.spinSeq || 0;
+
+  if (lastSeq === -1) {
+    lastSeq = seq;
+  } else if (seq !== lastSeq && !isAnim) {
+    lastSeq = seq;
+    isAnim  = true;
+    ov.classList.add('visible');
+
+    title.textContent = 'SPINNING...';
+    title.style.color = '#ffffff';
+    badge.textContent = 'GO!';
+
+    document.querySelectorAll('.pool-chip').forEach(c => c.classList.remove('highlight'));
+
+    runReel(s.spinResult || 0, pool, () => {
+      setTimeout(() => {
+        ov.classList.remove('visible');
+        badge.textContent = 'READY';
+        title.style.color = '#ffffff';
+        title.textContent = 'SPIN WHEEL';
+        document.querySelectorAll('.pool-chip').forEach(c => c.classList.remove('highlight'));
+        isAnim = false;
+      }, 2000); 
+    });
+  }
+}
+
+window.addEventListener('storage', () => {
+  const saved = localStorage.getItem('aclass_overlay_settings');
+  if (saved) update(JSON.parse(saved));
+});
+
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'UPDATE_SETTINGS') {
+    update(e.data.settings);
+  }
+});
+
+const saved = localStorage.getItem('aclass_overlay_settings');
+if (saved) update(JSON.parse(saved));
+</script>
+</body>
+</html>
