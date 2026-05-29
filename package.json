@@ -56,7 +56,6 @@
     "files": [
       "electron/**/*",
       "dist/**/*",
-      ".env",
       "package.json"
     ]
   }
