@@ -441,10 +441,23 @@ function startLocalServer() {
       return;
     }
 
-    if (req.url.startsWith('/overlays/')) {
+    // Serve static overlay files & assets
+    if (req.url === '/' || req.url === '/index.html') {
       const baseDir = isDev
-        ? path.join(__dirname, '../../tiklive_pro_web/public')
-        : path.join(__dirname, '../dist');
+        ? path.join(__dirname, '../dist') // In dev, we can still serve from local dist if available
+        : path.join(app.getAppPath(), 'dist');
+      const filePath = path.join(baseDir, 'index.html');
+      if (fs.existsSync(filePath)) {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        fs.createReadStream(filePath).pipe(res);
+        return;
+      }
+    }
+
+    if (req.url.startsWith('/overlays/') || req.url.startsWith('/assets/')) {
+      const baseDir = isDev
+        ? path.join(__dirname, '../dist')
+        : path.join(app.getAppPath(), 'dist');
 
       const filePath = path.join(baseDir, req.url.split('?')[0]);
 
@@ -452,12 +465,18 @@ function startLocalServer() {
         const ext = path.extname(filePath);
         const MIME = {
           '.html': 'text/html',
-          '.css': 'text/css',
-          '.js': 'text/javascript',
-          '.png': 'image/png',
-          '.mp3': 'audio/mpeg',
+          '.css':  'text/css',
+          '.js':   'text/javascript',
+          '.png':  'image/png',
+          '.jpg':  'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif':  'image/gif',
+          '.svg':  'image/svg+xml',
+          '.ico':  'image/x-icon',
+          '.mp3':  'audio/mpeg',
+          '.wav':  'audio/wav',
         };
-        res.writeHead(200, { 'Content-Type': MIME[ext] || 'text/plain' });
+        res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
         fs.createReadStream(filePath).pipe(res);
         return;
       }
