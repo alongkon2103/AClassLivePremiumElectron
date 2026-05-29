@@ -442,10 +442,15 @@ function startLocalServer() {
     }
 
     // Serve static overlay files & assets
-    if (req.url === '/' || req.url === '/index.html') {
-      const baseDir = isDev
-        ? path.join(__dirname, '../dist') // In dev, we can still serve from local dist if available
-        : path.join(app.getAppPath(), 'dist');
+    const urlPath = req.url.split('?')[0];
+    console.log(`[Native] Overlay Server Request: ${urlPath}`);
+
+    // Determine the base directory for files
+    const baseDir = isDev
+      ? path.join(__dirname, '../dist')
+      : path.join(process.resourcesPath, 'app.asar/dist');
+
+    if (urlPath === '/' || urlPath === '/index.html') {
       const filePath = path.join(baseDir, 'index.html');
       if (fs.existsSync(filePath)) {
         res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -454,15 +459,12 @@ function startLocalServer() {
       }
     }
 
-    if (req.url.startsWith('/overlays/') || req.url.startsWith('/assets/')) {
-      const baseDir = isDev
-        ? path.join(__dirname, '../dist')
-        : path.join(app.getAppPath(), 'dist');
-
-      const filePath = path.join(baseDir, req.url.split('?')[0]);
+    // Serve /overlays/ or /assets/
+    if (urlPath.startsWith('/overlays/') || urlPath.startsWith('/assets/')) {
+      const filePath = path.join(baseDir, urlPath);
 
       if (fs.existsSync(filePath)) {
-        const ext = path.extname(filePath);
+        const ext = path.extname(filePath).toLowerCase();
         const MIME = {
           '.html': 'text/html',
           '.css':  'text/css',
@@ -475,10 +477,13 @@ function startLocalServer() {
           '.ico':  'image/x-icon',
           '.mp3':  'audio/mpeg',
           '.wav':  'audio/wav',
+          '.json': 'application/json',
         };
         res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
         fs.createReadStream(filePath).pipe(res);
         return;
+      } else {
+        console.warn(`[Native] Overlay Server: File not found: ${filePath}`);
       }
     }
 
