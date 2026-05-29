@@ -347,7 +347,9 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false // Recommended for nut.js integration if needed
+      sandbox: false,
+      webSecurity: true,
+      allowRunningInsecureContent: false
     },
   });
 
@@ -356,9 +358,15 @@ function createMainWindow() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Load Content: Always prefer WEB_URL as requested
+  // Clear Cache & Load Content: Fix for Error 400 / Corrupted Sessions
   // ─────────────────────────────────────────────────────────────────────────────
-  mainWindow.loadURL(WEB_URL).catch(err => {
+  const session = mainWindow.webContents.session;
+  
+  // Optional: Clear cache if we keep getting 400 errors
+  session.clearStorageData().then(() => {
+    console.log('[Native] Storage cleared, loading URL...');
+    return mainWindow.loadURL(WEB_URL);
+  }).catch(err => {
     console.error(`[Native] Failed to load remote URL: ${WEB_URL}`, err.message);
     
     // Fallback to local index.html if remote fails (Offline support)
