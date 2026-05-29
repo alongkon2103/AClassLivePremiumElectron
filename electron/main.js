@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -368,6 +368,10 @@ function createMainWindow() {
     app.quit();
   });
 
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' }; // ไม่เปิดใน Electron window
+  });
   // ─────────────────────────────────────────────────────────────────────────────
   // Clear Cache & Load Content: Fix for Error 400 / Corrupted Sessions
   // ─────────────────────────────────────────────────────────────────────────────
