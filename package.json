@@ -1,6 +1,6 @@
 {
   "name": "aclass-live-premium",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A Class Store Pro — TikTok Live Interaction Native Bridge",
   "main": "electron/main.js",
   "author": "alongkon2103",
@@ -12,7 +12,8 @@
     "start": "electron .",
     "dev": "electron .",
     "build": "electron-builder build --win --publish never",
-    "dist": "electron-builder build --win --publish always"
+    "dist": "electron-builder build --win --publish always",
+    "electron:build": "electron-builder build --win --publish never"
   },
   "dependencies": {
     "@nut-tree-fork/nut-js": "^4.2.6",
@@ -47,7 +48,12 @@
       "shortcutName": "A Class Live Pro",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "uninstallDisplayName": "A Class Live Pro"
+      "uninstallDisplayName": "A Class Live Pro",
+      "perMachine": false,
+      "allowElevation": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "closeApplications": true
     },
     "publish": [
       {

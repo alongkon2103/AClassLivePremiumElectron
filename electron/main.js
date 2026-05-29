@@ -335,6 +335,9 @@ function resolveNutKey(keyStr) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createMainWindow() {
+  const preloadPath = path.join(__dirname, 'preload.js');
+  console.log('[Native] Preload Path:', preloadPath);
+
   mainWindow = new BrowserWindow({
     width: 1500,
     height: 900,
@@ -344,18 +347,18 @@ function createMainWindow() {
     show: false, // Don't show until ready
     backgroundColor: '#000000',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
-      webSecurity: true,
-      allowRunningInsecureContent: false
+      webSecurity: false // Temporary false to allow loading local resources from remote
     },
   });
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
+
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Clear Cache & Load Content: Fix for Error 400 / Corrupted Sessions
