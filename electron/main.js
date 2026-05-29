@@ -424,14 +424,29 @@ function startLocalServer() {
   }
 
   overlayServer = http.createServer((req, res) => {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Robust CORS Headers for OBS and Browsers
+    // ─────────────────────────────────────────────────────────────────────────────
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
-    if (req.url === '/events') {
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    const urlPath = req.url.split('?')[0];
+    console.log(`[Native] Overlay Server Request: ${urlPath}`);
+
+    // SSE endpoint
+    if (urlPath === '/events') {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
       });
       res.write(`data: ${JSON.stringify(currentSettings)}\n\n`);
       sseClients.push(res);
@@ -441,58 +456,60 @@ function startLocalServer() {
       return;
     }
 
-    // Serve static overlay files & assets
-    const urlPath = req.url.split('?')[0];
-    console.log(`[Native] Overlay Server Request: ${urlPath}`);
-
     // Determine the base directory for files
     const baseDir = isDev
       ? path.join(__dirname, '../dist')
       : path.join(process.resourcesPath, 'app.asar/dist');
 
-    if (urlPath === '/' || urlPath === '/index.html') {
-      const filePath = path.join(baseDir, 'index.html');
-      if (fs.existsSync(filePath)) {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        fs.createReadStream(filePath).pipe(res);
+    // Serve files (overlays, assets, or index.html)
+    let filePath = path.join(baseDir, urlPath);
+
+    // Default to index.html for root or SPA fallback
+    if (urlPath === '/' || urlPath === '/index.html' || !fs.existsSync(filePath) || !fs.lstatSync(filePath).isFile()) {
+      // If it's a file request (has extension) and not found, it's a real 404
+      if (urlPath !== '/' && urlPath !== '/index.html' && path.extname(urlPath)) {
+        res.writeHead(404);
+        res.end('Not found');
         return;
       }
+      filePath = path.join(baseDir, 'index.html');
     }
 
-    // Serve /overlays/ or /assets/
-    if (urlPath.startsWith('/overlays/') || urlPath.startsWith('/assets/')) {
-      const filePath = path.join(baseDir, urlPath);
-
-      if (fs.existsSync(filePath)) {
-        const ext = path.extname(filePath).toLowerCase();
-        const MIME = {
-          '.html': 'text/html',
-          '.css':  'text/css',
-          '.js':   'text/javascript',
-          '.png':  'image/png',
-          '.jpg':  'image/jpeg',
-          '.jpeg': 'image/jpeg',
-          '.gif':  'image/gif',
-          '.svg':  'image/svg+xml',
-          '.ico':  'image/x-icon',
-          '.mp3':  'audio/mpeg',
-          '.wav':  'audio/wav',
-          '.json': 'application/json',
-        };
-        res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
-        fs.createReadStream(filePath).pipe(res);
-        return;
-      } else {
-        console.warn(`[Native] Overlay Server: File not found: ${filePath}`);
-      }
+    if (fs.existsSync(filePath)) {
+      const ext = path.extname(filePath).toLowerCase();
+      const MIME = {
+        '.html': 'text/html; charset=utf-8',
+        '.css':  'text/css; charset=utf-8',
+        '.js':   'text/javascript; charset=utf-8',
+        '.mjs':  'text/javascript; charset=utf-8',
+        '.png':  'image/png',
+        '.jpg':  'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif':  'image/gif',
+        '.svg':  'image/svg+xml',
+        '.ico':  'image/x-icon',
+        '.mp3':  'audio/mpeg',
+        '.wav':  'audio/wav',
+        '.json': 'application/json; charset=utf-8',
+        '.woff': 'font/woff',
+        '.woff2':'font/woff2',
+        '.ttf':  'font/ttf',
+      };
+      
+      res.writeHead(200, { 
+        'Content-Type': MIME[ext] || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      fs.createReadStream(filePath).pipe(res);
+      return;
     }
 
     res.writeHead(404);
     res.end('Not found');
   });
 
-  overlayServer.listen(5555, () => {
-    console.log('[Native] Local overlay server running on port 5555');
+  overlayServer.listen(5555, '0.0.0.0', () => {
+    console.log('[Native] Local overlay server running on http://localhost:5555');
   });
 }
 

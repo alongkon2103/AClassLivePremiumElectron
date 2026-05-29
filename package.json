@@ -1,6 +1,6 @@
 {
   "name": "aclass-live-premium",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "A Class Store Pro — TikTok Live Interaction Native Bridge",
   "main": "electron/main.js",
   "author": "alongkon2103",
