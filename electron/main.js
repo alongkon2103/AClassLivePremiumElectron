@@ -138,31 +138,31 @@ function normalizeHotkey(key) {
       '0': 'num0', '1': 'num1', '2': 'num2', '3': 'num3', '4': 'num4',
       '5': 'num5', '6': 'num6', '7': 'num7', '8': 'num8', '9': 'num9',
       // Electron uses numadd / numsub / nummult / numdiv on both platforms
-      'add':      'numadd',
+      'add': 'numadd',
       'subtract': 'numsub',
       'multiply': 'nummult',
-      'divide':   'numdiv',
-      'decimal':  'numdec',
-      'enter':    'enter',
+      'divide': 'numdiv',
+      'decimal': 'numdec',
+      'enter': 'enter',
     };
     normalized = numMap[code] ?? code;
 
   } else {
     // Standard keys & modifiers
     normalized = normalized
-      .replace(/ArrowUp/i,    'Up')
-      .replace(/ArrowDown/i,  'Down')
-      .replace(/ArrowLeft/i,  'Left')
+      .replace(/ArrowUp/i, 'Up')
+      .replace(/ArrowDown/i, 'Down')
+      .replace(/ArrowLeft/i, 'Left')
       .replace(/ArrowRight/i, 'Right')
-      .replace(/Control/i,    'CommandOrControl')
-      .replace(/Ctrl/i,       'CommandOrControl')
+      .replace(/Control/i, 'CommandOrControl')
+      .replace(/Ctrl/i, 'CommandOrControl')
       // Meta → Command (Mac) or Super (Win/Linux)
       // NOTE: Win key on Windows is usually intercepted by the OS.
       // Use Super only if you really need it; most games use F-keys instead.
-      .replace(/Meta/i,       isMac ? 'Command' : 'Super')
-      .replace(/Alt/i,        'Alt')
-      .replace(/Escape/i,     'Esc')
-      .replace(/ /g,          'Space');
+      .replace(/Meta/i, isMac ? 'Command' : 'Super')
+      .replace(/Alt/i, 'Alt')
+      .replace(/Escape/i, 'Esc')
+      .replace(/ /g, 'Space');
   }
 
   console.log(`[Hotkey] Result: "${original}" -> "${normalized}"`);
@@ -185,7 +185,7 @@ function registerHotkeys(settings) {
     try {
       const success = globalShortcut.register(normalized, () => {
         console.log(`[Hotkey] Triggered: ${normalized} -> ${action}`);
-        if (mainWindow)  mainWindow.webContents.send(action, val);
+        if (mainWindow) mainWindow.webContents.send(action, val);
         if (overlayWindow) overlayWindow.webContents.send(action, val);
       });
       if (!success) console.warn(`[Hotkey] Failed to register: ${normalized}`);
@@ -194,9 +194,9 @@ function registerHotkeys(settings) {
     }
   };
 
-  bind(hotkeys.win,  'hotkey:win-adjust', 1);
+  bind(hotkeys.win, 'hotkey:win-adjust', 1);
   bind(hotkeys.undo, 'hotkey:win-adjust', -1);
-  bind(hotkeys.reset,'hotkey:win-adjust', 'reset');
+  bind(hotkeys.reset, 'hotkey:win-adjust', 'reset');
   bind(hotkeys.spin, 'hotkey:spin-trigger', true);
 
   if (hotkeys.custom1) bind(hotkeys.custom1.key, 'hotkey:win-adjust', hotkeys.custom1.value);
@@ -214,71 +214,71 @@ function registerHotkeys(settings) {
  */
 const NUT_KEY_MAP = {
   // Special keys
-  Space:     Key.Space,
-  Enter:     Key.Enter,
-  Return:    Key.Enter,
-  Escape:    Key.Escape,
-  Esc:       Key.Escape,
-  Tab:       Key.Tab,
+  Space: Key.Space,
+  Enter: Key.Enter,
+  Return: Key.Enter,
+  Escape: Key.Escape,
+  Esc: Key.Escape,
+  Tab: Key.Tab,
   Backspace: Key.Backspace,
-  Delete:    Key.Delete,
-  Insert:    Key.Insert,
-  Home:      Key.Home,
-  End:       Key.End,
-  PageUp:    Key.PageUp,
-  PageDown:  Key.PageDown,
+  Delete: Key.Delete,
+  Insert: Key.Insert,
+  Home: Key.Home,
+  End: Key.End,
+  PageUp: Key.PageUp,
+  PageDown: Key.PageDown,
 
   // Arrow keys — accept both Arrow* and bare form
-  ArrowUp:    Key.Up,
-  ArrowDown:  Key.Down,
-  ArrowLeft:  Key.Left,
+  ArrowUp: Key.Up,
+  ArrowDown: Key.Down,
+  ArrowLeft: Key.Left,
   ArrowRight: Key.Right,
-  Up:    Key.Up,
-  Down:  Key.Down,
-  Left:  Key.Left,
+  Up: Key.Up,
+  Down: Key.Down,
+  Left: Key.Left,
   Right: Key.Right,
 
   // Function keys
-  F1: Key.F1, F2: Key.F2, F3: Key.F3,  F4:  Key.F4,
-  F5: Key.F5, F6: Key.F6, F7: Key.F7,  F8:  Key.F8,
-  F9: Key.F9, F10:Key.F10,F11:Key.F11, F12: Key.F12,
+  F1: Key.F1, F2: Key.F2, F3: Key.F3, F4: Key.F4,
+  F5: Key.F5, F6: Key.F6, F7: Key.F7, F8: Key.F8,
+  F9: Key.F9, F10: Key.F10, F11: Key.F11, F12: Key.F12,
 
   // Numpad
   Num0: Key.Num0, Num1: Key.Num1, Num2: Key.Num2,
   Num3: Key.Num3, Num4: Key.Num4, Num5: Key.Num5,
   Num6: Key.Num6, Num7: Key.Num7, Num8: Key.Num8,
   Num9: Key.Num9,
-  NumAdd:      Key.Add,
+  NumAdd: Key.Add,
   NumSubtract: Key.Subtract,
   NumMultiply: Key.Multiply,
-  NumDivide:   Key.Divide,
-  NumDecimal:  Key.Decimal,
-  NumEnter:    Key.Enter,
+  NumDivide: Key.Divide,
+  NumDecimal: Key.Decimal,
+  NumEnter: Key.Enter,
   // Also accept the 'Numpad*' prefix coming from the renderer
-  NumpadEnter:    Key.Enter,
-  NumpadAdd:      Key.Add,
+  NumpadEnter: Key.Enter,
+  NumpadAdd: Key.Add,
   NumpadSubtract: Key.Subtract,
   NumpadMultiply: Key.Multiply,
-  NumpadDivide:   Key.Divide,
-  NumpadDecimal:  Key.Decimal,
+  NumpadDivide: Key.Divide,
+  NumpadDecimal: Key.Decimal,
 };
 
 /**
  * Modifier key map — handles common aliases across platforms.
  */
 const NUT_MODIFIER_MAP = {
-  Ctrl:    Key.LeftControl,
+  Ctrl: Key.LeftControl,
   Control: Key.LeftControl,
-  Shift:   Key.LeftShift,
-  Alt:     Key.LeftAlt,
+  Shift: Key.LeftShift,
+  Alt: Key.LeftAlt,
   // Mac
-  Option:  Key.LeftAlt,
-  Cmd:     Key.LeftCmd,
+  Option: Key.LeftAlt,
+  Cmd: Key.LeftCmd,
   Command: Key.LeftCmd,
-  Meta:    isMac ? Key.LeftCmd : Key.LeftWin,
+  Meta: isMac ? Key.LeftCmd : Key.LeftWin,
   // Windows / Linux
-  Win:     Key.LeftWin,
-  Super:   isWin ? Key.LeftWin : Key.LeftCmd,
+  Win: Key.LeftWin,
+  Super: isWin ? Key.LeftWin : Key.LeftCmd,
 };
 
 /**
@@ -363,16 +363,8 @@ function createMainWindow() {
   // ─────────────────────────────────────────────────────────────────────────────
   // Clear Cache & Load Content: Fix for Error 400 / Corrupted Sessions
   // ─────────────────────────────────────────────────────────────────────────────
-  const session = mainWindow.webContents.session;
-  
-  // Optional: Clear cache if we keep getting 400 errors
-  session.clearStorageData().then(() => {
-    console.log('[Native] Storage cleared, loading URL...');
-    return mainWindow.loadURL(WEB_URL);
-  }).catch(err => {
+  mainWindow.loadURL(WEB_URL).catch(err => {
     console.error(`[Native] Failed to load remote URL: ${WEB_URL}`, err.message);
-    
-    // Fallback to local index.html if remote fails (Offline support)
     const indexPath = path.join(__dirname, '../dist/index.html');
     if (fs.existsSync(indexPath)) {
       console.log('[Native] Falling back to local index.html');
@@ -462,10 +454,10 @@ function startLocalServer() {
         const ext = path.extname(filePath);
         const MIME = {
           '.html': 'text/html',
-          '.css':  'text/css',
-          '.js':   'text/javascript',
-          '.png':  'image/png',
-          '.mp3':  'audio/mpeg',
+          '.css': 'text/css',
+          '.js': 'text/javascript',
+          '.png': 'image/png',
+          '.mp3': 'audio/mpeg',
         };
         res.writeHead(200, { 'Content-Type': MIME[ext] || 'text/plain' });
         fs.createReadStream(filePath).pipe(res);
@@ -606,8 +598,8 @@ ipcMain.on('tiktok:connect', async (event, { username, sessionId, idc, token, or
 
   const callbacks = {
     onStatus: (status) => { if (mainWindow) mainWindow.webContents.send('tiktok:status', status); },
-    onStats:  (stats)  => { if (mainWindow) mainWindow.webContents.send('tiktok:stats', stats); },
-    onEvent:  (eventData) => { if (mainWindow) mainWindow.webContents.send('tiktok:event', eventData); },
+    onStats: (stats) => { if (mainWindow) mainWindow.webContents.send('tiktok:stats', stats); },
+    onEvent: (eventData) => { if (mainWindow) mainWindow.webContents.send('tiktok:event', eventData); },
   };
 
   if (orderId) {
@@ -652,7 +644,7 @@ ipcMain.on('keyboard:press', async (event, keyName) => {
 
     // Split on ' + ' to separate modifiers from the main key
     const parts = keyName.toString().split('+').map(p => p.trim()).filter(Boolean);
-    const mainKeyStr  = parts[parts.length - 1];
+    const mainKeyStr = parts[parts.length - 1];
     const modifierStrs = parts.slice(0, parts.length - 1);
 
     // Resolve modifiers
