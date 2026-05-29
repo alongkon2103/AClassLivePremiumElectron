@@ -50,5 +50,6 @@ contextBridge.exposeInMainWorld('electron', {
       throw new Error(`Invalid IPC channel: ${channel}`);
     }
     return await ipcRenderer.invoke(channel, data);
-  }
-});
+    },
+    getVersion: () => require('../package.json').version
+    });
