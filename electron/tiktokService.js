@@ -6,7 +6,7 @@ let retryTimer = null;
 let isStopping = false;
 let retryCount = 0;
 
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+const HEARTBEAT_INTERVAL = 30000;
 const BASE_RETRY = 10000;
 const MAX_RETRY = 60000;
 
@@ -77,12 +77,8 @@ function startConnection(tiktokUsername, middlewareClient, callbacks, sessionDat
     if (sessionData?.sessionid && sessionData?.idc) {
       options.sessionId = sessionData.sessionid;
       options.ttTargetIdc = sessionData.idc;
-      
-      // Also add to headers specifically for better reliability
       if (!options.requestOptions.headers) options.requestOptions.headers = {};
-      const cookieStr = `sessionid=${sessionData.sessionid}; tt-target-idc=${sessionData.idc}`;
-      options.requestOptions.headers["Cookie"] = cookieStr;
-      
+      options.requestOptions.headers["Cookie"] = `sessionid=${sessionData.sessionid}; tt-target-idc=${sessionData.idc}`;
       console.log('[TikTok Service] Using session cookie ✅');
     }
 
@@ -92,10 +88,7 @@ function startConnection(tiktokUsername, middlewareClient, callbacks, sessionDat
     tiktokConnection.on('connected', (state) => {
       retryCount = 0;
       callbacks.onStatus({ connected: true, roomId: state.roomId });
-      
-      // Push initial status - registration is now handled by IPC or Cache
       middlewareClient.push_event('status', { connected: true }).catch(() => {});
-      
       heartbeatTimer = setInterval(() => {
         middlewareClient.heartbeat().catch(() => {});
       }, HEARTBEAT_INTERVAL);
@@ -125,23 +118,45 @@ function startConnection(tiktokUsername, middlewareClient, callbacks, sessionDat
       }
     });
 
-    // Event Handlers - use specific set to avoid duplication
-    // 'social' covers follow and share events in most tiktok connector versions
-    const events = ['gift', 'chat', 'like', 'social', 'roomUser'];
+    // ── Gift — แยกออกมาจัดการเอง เพื่อรอ repeatEnd ก่อน push ──
+    tiktokConnection.on('gift', (data) => {
+      const diamondCount = data.diamondCount || 0;
+
+      // push เฉพาะตอน streak จบ (repeatEnd) หรือของขวัญที่ไม่มี streak
+      if (data.repeatEnd || diamondCount > 0) {
+        const eventData = {
+          giftId: data.giftId,
+          giftName: data.giftName,
+          username: data.uniqueId,
+          nickname: data.nickname,
+          diamond: diamondCount,
+          diamondCount: diamondCount,
+          repeatCount: data.repeatCount || 1,
+          totalValue: diamondCount * (data.repeatCount || 1),
+          repeatEnd: data.repeatEnd,
+          profilePictureUrl: data.profilePictureUrl,
+          timestamp: new Date().toISOString()
+        };
+
+        // ถ้ามี streak ให้รอ repeatEnd เท่านั้น
+        if (data.giftType === 1 && !data.repeatEnd) return;
+
+        middlewareClient.push_event('gift', eventData).catch(() => {});
+        callbacks.onEvent({ type: 'gift', data: eventData });
+      }
+    });
+
+    // ── Events อื่นๆ (ไม่รวม gift) ──
+    const events = ['chat', 'like', 'social', 'roomUser'];
     events.forEach(eventType => {
       tiktokConnection.on(eventType, (data) => {
-        // Map common stats
         if (data.viewerCount !== undefined || data.totalLikeCount !== undefined) {
           callbacks.onStats({
             viewerCount: data.viewerCount || 0,
             likeCount: data.totalLikeCount || 0
           });
         }
-
-        // Push to Middleware
         middlewareClient.push_event(eventType, data).catch(() => {});
-        
-        // Send to UI
         callbacks.onEvent({ type: eventType, data });
       });
     });

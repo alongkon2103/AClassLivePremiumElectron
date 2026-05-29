@@ -27,7 +27,8 @@ contextBridge.exposeInMainWorld('electron', {
       'update:available',
       'update:progress',
       'update:downloaded',
-      'update:error'
+      'update:error',
+      'auth:callback'  // ← รับ deep link OAuth callback
     ];
     if (!validChannels.includes(channel)) return () => {};
     const subscription = (event, ...args) => func(...args);
@@ -42,7 +43,8 @@ contextBridge.exposeInMainWorld('electron', {
       'settings:load',
       'tiktok:login',
       'interactive:register-session',
-      'update:install'
+      'update:install',
+      'auth:open-external'  // ← เปิด browser ภายนอกสำหรับ OAuth
     ];
     if (!validChannels.includes(channel)) {
       throw new Error(`Invalid IPC channel: ${channel}`);

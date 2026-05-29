@@ -8,6 +8,41 @@ const http = require('http');
 // ─────────────────────────────────────────────────────────────────────────────
 app.disableHardwareAcceleration();
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Deep Link — single instance lock
+// ─────────────────────────────────────────────────────────────────────────────
+app.setAsDefaultProtocolClient('aclassstore');
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  // Windows/Linux: second instance sends deep link here
+  app.on('second-instance', (event, commandLine) => {
+    const url = commandLine.find(arg => arg.startsWith('aclassstore://'));
+    if (url) handleDeepLink(url);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+function handleDeepLink(url) {
+  try {
+    const parsed = new URL(url);
+    const token = parsed.searchParams.get('token');
+    const user = parsed.searchParams.get('user');
+    const error = parsed.searchParams.get('error');
+    console.log('[DeepLink] Received auth callback');
+    if (mainWindow) {
+      mainWindow.webContents.send('auth:callback', { token, user, error });
+    }
+  } catch (e) {
+    console.error('[DeepLink] Failed to parse URL:', e.message);
+  }
+}
+
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const appPath = app.isPackaged ? path.dirname(app.getPath('exe')) : app.getAppPath();
 
@@ -95,7 +130,6 @@ function loadSettings() {
   try {
     if (fs.existsSync(SETTINGS_PATH)) {
       currentSettings = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
-      // Force disabled on every startup
       currentSettings.winEnabled = false;
       currentSettings.spinEnabled = false;
       return currentSettings;
@@ -118,8 +152,7 @@ function saveSettings(settings) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hotkey normalization  (Electron globalShortcut format)
-// Docs: https://www.electronjs.org/docs/latest/api/accelerator
+// Hotkey normalization
 // ─────────────────────────────────────────────────────────────────────────────
 
 function normalizeHotkey(key) {
@@ -132,12 +165,10 @@ function normalizeHotkey(key) {
   console.log(`[Hotkey] Normalizing: "${original}"`);
 
   if (lower.startsWith('numpad')) {
-    // Electron accelerator names for numpad keys
     const code = lower.replace('numpad', '');
     const numMap = {
       '0': 'num0', '1': 'num1', '2': 'num2', '3': 'num3', '4': 'num4',
       '5': 'num5', '6': 'num6', '7': 'num7', '8': 'num8', '9': 'num9',
-      // Electron uses numadd / numsub / nummult / numdiv on both platforms
       'add': 'numadd',
       'subtract': 'numsub',
       'multiply': 'nummult',
@@ -146,9 +177,7 @@ function normalizeHotkey(key) {
       'enter': 'enter',
     };
     normalized = numMap[code] ?? code;
-
   } else {
-    // Standard keys & modifiers
     normalized = normalized
       .replace(/ArrowUp/i, 'Up')
       .replace(/ArrowDown/i, 'Down')
@@ -156,9 +185,6 @@ function normalizeHotkey(key) {
       .replace(/ArrowRight/i, 'Right')
       .replace(/Control/i, 'CommandOrControl')
       .replace(/Ctrl/i, 'CommandOrControl')
-      // Meta → Command (Mac) or Super (Win/Linux)
-      // NOTE: Win key on Windows is usually intercepted by the OS.
-      // Use Super only if you really need it; most games use F-keys instead.
       .replace(/Meta/i, isMac ? 'Command' : 'Super')
       .replace(/Alt/i, 'Alt')
       .replace(/Escape/i, 'Esc')
@@ -205,15 +231,10 @@ function registerHotkeys(settings) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// nut-tree keyboard press  (physical key simulation)
+// nut-tree keyboard press
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Full cross-platform key map for nut-tree-fork.
- * Key names are the actual property names on the Key enum.
- */
 const NUT_KEY_MAP = {
-  // Special keys
   Space: Key.Space,
   Enter: Key.Enter,
   Return: Key.Enter,
@@ -227,8 +248,6 @@ const NUT_KEY_MAP = {
   End: Key.End,
   PageUp: Key.PageUp,
   PageDown: Key.PageDown,
-
-  // Arrow keys — accept both Arrow* and bare form
   ArrowUp: Key.Up,
   ArrowDown: Key.Down,
   ArrowLeft: Key.Left,
@@ -237,13 +256,9 @@ const NUT_KEY_MAP = {
   Down: Key.Down,
   Left: Key.Left,
   Right: Key.Right,
-
-  // Function keys
   F1: Key.F1, F2: Key.F2, F3: Key.F3, F4: Key.F4,
   F5: Key.F5, F6: Key.F6, F7: Key.F7, F8: Key.F8,
   F9: Key.F9, F10: Key.F10, F11: Key.F11, F12: Key.F12,
-
-  // Numpad
   Num0: Key.Num0, Num1: Key.Num1, Num2: Key.Num2,
   Num3: Key.Num3, Num4: Key.Num4, Num5: Key.Num5,
   Num6: Key.Num6, Num7: Key.Num7, Num8: Key.Num8,
@@ -254,7 +269,6 @@ const NUT_KEY_MAP = {
   NumDivide: Key.Divide,
   NumDecimal: Key.Decimal,
   NumEnter: Key.Enter,
-  // Also accept the 'Numpad*' prefix coming from the renderer
   NumpadEnter: Key.Enter,
   NumpadAdd: Key.Add,
   NumpadSubtract: Key.Subtract,
@@ -263,28 +277,19 @@ const NUT_KEY_MAP = {
   NumpadDecimal: Key.Decimal,
 };
 
-/**
- * Modifier key map — handles common aliases across platforms.
- */
 const NUT_MODIFIER_MAP = {
   Ctrl: Key.LeftControl,
   Control: Key.LeftControl,
   Shift: Key.LeftShift,
   Alt: Key.LeftAlt,
-  // Mac
   Option: Key.LeftAlt,
   Cmd: Key.LeftCmd,
   Command: Key.LeftCmd,
   Meta: isMac ? Key.LeftCmd : Key.LeftWin,
-  // Windows / Linux
   Win: Key.LeftWin,
   Super: isWin ? Key.LeftWin : Key.LeftCmd,
 };
 
-/**
- * Mac Option-key characters → their base equivalents.
- * Only needed when the renderer sends the composed character instead of the key name.
- */
 const MAC_OPTION_CHARS = {
   'ƒ': 'f', '≈': 'x', '∂': 'd', '©': 'c', '√': 'v',
   'å': 'a', 'ß': 's', '†': 't', '¬': 'l', 'œ': 'q',
@@ -294,39 +299,25 @@ const MAC_OPTION_CHARS = {
 
 function resolveNutKey(keyStr) {
   if (!keyStr) return undefined;
-
-  // 1. Resolve Mac Option characters first
   const decomposed = MAC_OPTION_CHARS[keyStr];
   if (decomposed) keyStr = decomposed;
-
-  // 2. Check the explicit map (case-sensitive first, then case-insensitive)
   if (NUT_KEY_MAP[keyStr] !== undefined) return NUT_KEY_MAP[keyStr];
-
-  const lower = keyStr.toLowerCase();
   const upperFirst = keyStr.charAt(0).toUpperCase() + keyStr.slice(1).toLowerCase();
   if (NUT_KEY_MAP[upperFirst] !== undefined) return NUT_KEY_MAP[upperFirst];
-
-  // 3. Single alphabetic character → Key.A … Key.Z
   if (keyStr.length === 1 && /[a-zA-Z]/.test(keyStr)) {
-    const k = Key[`Key${keyStr.toUpperCase()}`]; // some versions use KeyA
+    const k = Key[`Key${keyStr.toUpperCase()}`];
     if (k !== undefined) return k;
-    return Key[keyStr.toUpperCase()];            // fallback: Key.A
+    return Key[keyStr.toUpperCase()];
   }
-
-  // 4. Single digit → Key.Num0 … Key.Num9  (top-row digit, not numpad)
   if (keyStr.length === 1 && /[0-9]/.test(keyStr)) {
-    return Key[`Num${keyStr}`]; // Key.Num0 … Key.Num9
+    return Key[`Num${keyStr}`];
   }
-
-  // 5. Numpad* prefix coming from the renderer (e.g. "Numpad5")
   const numpadMatch = keyStr.match(/^[Nn]umpad(\w+)$/);
   if (numpadMatch) {
     const sub = numpadMatch[1];
     const candidate = NUT_KEY_MAP[`Numpad${sub}`] ?? NUT_KEY_MAP[`Num${sub}`];
     if (candidate !== undefined) return candidate;
   }
-
-  // 6. Last resort: try Key[keyStr] directly
   return Key[keyStr];
 }
 
@@ -344,14 +335,14 @@ function createMainWindow() {
     minWidth: 1100,
     minHeight: 680,
     frame: false,
-    show: false, // Don't show until ready
+    show: false,
     backgroundColor: '#000000',
     webPreferences: {
       preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
-      webSecurity: false // Temporary false to allow loading local resources from remote
+      webSecurity: false
     },
   });
 
@@ -368,13 +359,12 @@ function createMainWindow() {
     app.quit();
   });
 
+  // เปิด link ทั้งหมดใน browser ภายนอก ยกเว้น WEB_URL ของเราเอง
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
-    return { action: 'deny' }; // ไม่เปิดใน Electron window
+    return { action: 'deny' };
   });
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Clear Cache & Load Content: Fix for Error 400 / Corrupted Sessions
-  // ─────────────────────────────────────────────────────────────────────────────
+
   mainWindow.loadURL(WEB_URL).catch(err => {
     console.error(`[Native] Failed to load remote URL: ${WEB_URL}`, err.message);
     const indexPath = path.join(__dirname, '../dist/index.html');
@@ -389,13 +379,11 @@ function createMainWindow() {
   if (isDev) {
     mainWindow.webContents.openDevTools();
   } else {
-    // ALLOW DEVTOOLS IN PRODUCTION FOR DEBUGGING (Ctrl+Shift+I)
     globalShortcut.register('CommandOrControl+Shift+I', () => {
       if (mainWindow) mainWindow.webContents.toggleDevTools();
     });
   }
 
-  // Handle crash or hang
   mainWindow.webContents.on('render-process-gone', (event, detailed) => {
     console.error('Renderer process gone:', detailed.reason);
   });
@@ -439,7 +427,6 @@ function startLocalServer() {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 
-    // SSE endpoint
     if (req.url === '/events') {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -454,7 +441,6 @@ function startLocalServer() {
       return;
     }
 
-    // Serve static overlay files
     if (req.url.startsWith('/overlays/')) {
       const baseDir = isDev
         ? path.join(__dirname, '../../tiklive_pro_web/public')
@@ -518,6 +504,11 @@ app.whenReady().then(() => {
     }
   });
 
+  // ── Auth: open external browser for OAuth ────────────────────────────────
+  ipcMain.handle('auth:open-external', async (event, url) => {
+    await shell.openExternal(url);
+  });
+
   // ── Settings ──────────────────────────────────────────────────────────────
   ipcMain.handle('settings:load', () => loadSettings());
 
@@ -557,7 +548,12 @@ app.whenReady().then(() => {
   createMainWindow();
   createOverlayWindow();
 
-  // Check for updates
+  // Mac: handle deep link when app already open
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleDeepLink(url);
+  });
+
   if (app.isPackaged) {
     autoUpdater.checkForUpdatesAndNotify();
   }
@@ -647,24 +643,21 @@ ipcMain.handle('rcon:send', async (event, { host, port, password, command }) => 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Physical keyboard simulation  (nut-tree-fork)
+// Physical keyboard simulation
 // ─────────────────────────────────────────────────────────────────────────────
 
 ipcMain.on('keyboard:press', async (event, keyName) => {
   try {
     console.log(`[Native] Attempting key press: ${keyName}`);
 
-    // Split on ' + ' to separate modifiers from the main key
     const parts = keyName.toString().split('+').map(p => p.trim()).filter(Boolean);
     const mainKeyStr = parts[parts.length - 1];
     const modifierStrs = parts.slice(0, parts.length - 1);
 
-    // Resolve modifiers
     const modifierKeys = modifierStrs
       .map(m => NUT_MODIFIER_MAP[m] ?? NUT_MODIFIER_MAP[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()])
       .filter(k => k !== undefined);
 
-    // Resolve main key
     const keyToPress = resolveNutKey(mainKeyStr);
 
     if (keyToPress === undefined) {
