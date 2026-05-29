@@ -3,6 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Hard-fix for Black Screen on some Windows machines
+// ─────────────────────────────────────────────────────────────────────────────
+app.disableHardwareAcceleration();
+
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const appPath = app.isPackaged ? path.dirname(app.getPath('exe')) : app.getAppPath();
 
@@ -350,16 +355,28 @@ function createMainWindow() {
     mainWindow.show();
   });
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Load Content: Always prefer WEB_URL as requested
+  // ─────────────────────────────────────────────────────────────────────────────
+  mainWindow.loadURL(WEB_URL).catch(err => {
+    console.error(`[Native] Failed to load remote URL: ${WEB_URL}`, err.message);
+    
+    // Fallback to local index.html if remote fails (Offline support)
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    if (fs.existsSync(indexPath)) {
+      console.log('[Native] Falling back to local index.html');
+      mainWindow.loadFile(indexPath).catch(localErr => {
+        console.error('[Native] Local fallback also failed:', localErr.message);
+      });
+    }
+  });
+
   if (isDev) {
-    mainWindow.loadURL(WEB_URL).catch(err => {
-      console.error('Failed to load URL in development:', err);
-    });
     mainWindow.webContents.openDevTools();
   } else {
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    mainWindow.loadFile(indexPath).catch(err => {
-      console.error('Failed to load index.html in production:', err);
-      // Fallback or show error window
+    // ALLOW DEVTOOLS IN PRODUCTION FOR DEBUGGING (Ctrl+Shift+I)
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+      if (mainWindow) mainWindow.webContents.toggleDevTools();
     });
   }
 
