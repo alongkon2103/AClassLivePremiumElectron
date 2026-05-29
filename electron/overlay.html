@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Win Counter Overlay</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #18181f;
+      --border: #1e1e28;
+      --text: #e8e8f0;
+      --purple: #7c5cfc;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Sora', sans-serif;
+    }
+    .overlay-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .card {
+      background: rgba(13, 13, 13, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      width: 320px;
+      text-align: center;
+      color: var(--text);
+      -webkit-app-region: drag;
+    }
+    .titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .close-btn {
+      -webkit-app-region: no-drag;
+      cursor: pointer;
+      color: #ff4444;
+    }
+    .win-number {
+      font-size: 80px;
+      font-weight: bold;
+      margin: 10px 0;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .label {
+      font-size: 14px;
+      color: #8888a0;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 16px;
+      -webkit-app-region: no-drag;
+    }
+    button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: var(--purple);
+    }
+    .hotkeys {
+      margin-top: 16px;
+      font-size: 10px;
+      color: #44445a;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay-container">
+    <div class="card">
+      <div class="titlebar">
+        <span>Win Counter Overlay</span>
+        <span class="close-btn" onclick="window.electron.send('overlay:toggle')">✕</span>
+      </div>
+      <div id="count" class="win-number">0</div>
+      <div class="label">WIN</div>
+      <div class="controls">
+        <button onclick="changeCount(-1)">− 1</button>
+        <button onclick="changeCount(1)">+ 1</button>
+        <button onclick="resetCount()">↺ Reset</button>
+      </div>
+      <div class="hotkeys">
+        F8=+1 | F9=-1 | F10=Reset
+      </div>
+    </div>
+  </div>
+  <script>
+    let count = 0;
+    const countEl = document.getElementById('count');
+    
+    function changeCount(val) {
+      count = Math.max(0, count + val);
+      updateDisplay();
+    }
+    
+    function resetCount() {
+      count = 0;
+      updateDisplay();
+    }
+    
+    function updateDisplay() {
+      countEl.textContent = count;
+    }
+
+    // Stub for hotkeys if needed via IPC later
+  </script>
+</body>
+</html>

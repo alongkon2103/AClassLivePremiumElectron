@@ -1,0 +1,63 @@
+{
+  "name": "aclass-live-premium",
+  "version": "1.0.1",
+  "description": "A Class Store Pro — TikTok Live Interaction Native Bridge",
+  "main": "electron/main.js",
+  "author": "alongkon2103",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alongkon2103/AClassLivePremiumElectron.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder build --win --publish never",
+    "dist": "electron-builder build --win --publish always"
+  },
+  "dependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.6",
+    "axios": "^1.16.1",
+    "dotenv": "^17.4.2",
+    "electron-updater": "^6.8.3",
+    "node-machine-id": "^1.1.12",
+    "rcon-client": "^4.2.5",
+    "tiktok-live-connector": "^2.1.1-beta1"
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.aclassstore.livepro",
+    "productName": "AClassLivePro",
+    "directories": {
+      "output": "dist-build"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "dist/AClassStore.png",
+      "artifactName": "${productName}_Setup_${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "A Class Live Pro"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "alongkon2103",
+        "repo": "AClassLivePremiumElectron"
+      }
+    ],
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      ".env",
+      "package.json"
+    ]
+  }
+}
