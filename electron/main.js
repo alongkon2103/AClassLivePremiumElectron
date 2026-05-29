@@ -359,6 +359,14 @@ function createMainWindow() {
     mainWindow.show();
   });
 
+  mainWindow.on('closed', () => {
+    if (overlayWindow) {
+      overlayWindow.destroy();
+      overlayWindow = null;
+    }
+    mainWindow = null;
+    app.quit();
+  });
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Clear Cache & Load Content: Fix for Error 400 / Corrupted Sessions
