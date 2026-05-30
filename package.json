@@ -1,6 +1,6 @@
 {
   "name": "aclass-live-premium",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "A Class Store Pro — TikTok Live Interaction Native Bridge",
   "main": "electron/main.js",
   "author": "alongkon2103",
@@ -13,7 +13,9 @@
     "dev": "electron .",
     "build": "electron-builder build --win --publish never",
     "dist": "electron-builder build --win --publish always",
-    "electron:build": "electron-builder build --win --publish never"
+    "electron:build": "electron-builder build --win --publish never",
+    "build:mac": "electron-builder build --mac --publish never"
+    
   },
   "dependencies": {
     "@nut-tree-fork/nut-js": "^4.2.6",
@@ -22,7 +24,8 @@
     "electron-updater": "^6.8.3",
     "node-machine-id": "^1.1.12",
     "rcon-client": "^4.2.5",
-    "tiktok-live-connector": "^2.1.1-beta1"
+    "tiktok-live-connector": "^2.1.1-beta1",
+    "uiohook-napi": "^1.5.5"
   },
   "devDependencies": {
     "electron": "^28.2.0",
@@ -33,6 +36,18 @@
     "productName": "AClassLivePro",
     "directories": {
       "output": "dist-build"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "artifactName": "${productName}_${version}_mac.${ext}"
     },
     "win": {
       "target": [

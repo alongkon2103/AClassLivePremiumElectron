@@ -11,21 +11,119 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Arial', sans-serif;
 }
+
+:root {
+  /* Theme 1: Cyber Neon (Default) */
+  --bg-panel: linear-gradient(135deg, #0a0a1a 0%, #0d0a1f 100%);
+  --border-panel: 1px solid rgba(139,92,246,0.35);
+  --rad-panel: 22px;
+  --shadow-panel: 0 10px 30px rgba(0,0,0,0.5);
+  
+  --font-title: 'Arial Black', Arial, sans-serif;
+  --color-title: #fff;
+  
+  --bg-badge: rgba(139,92,246,0.14);
+  --border-badge: 1px solid rgba(139,92,246,0.4);
+  --color-badge: #a78bfa;
+  --rad-badge: 20px;
+  
+  --bg-track: rgba(0,0,0,0.25);
+  --rad-track: 14px;
+  --mask-edge: #0a0a1a;
+  
+  --border-sel: 2px solid rgba(168,85,247,0.8);
+  --shadow-sel: 0 0 20px rgba(168,85,247,0.4);
+  --color-arrow: #a78bfa;
+  --rad-sel: 12px;
+  
+  --bg-card: rgba(14,12,28,0.9);
+  --border-card: 1.5px solid rgba(255,255,255,0.06);
+  --rad-card: 12px;
+  --shadow-card: none;
+  
+  --font-num: 'Arial Black', Arial, sans-serif;
+}
+
+body.theme-2 {
+  /* Theme 2: Clean Glass */
+  --bg-panel: rgba(255, 255, 255, 0.95);
+  --border-panel: 1px solid rgba(0,0,0,0.08);
+  --rad-panel: 24px;
+  --shadow-panel: 0 16px 40px rgba(0,0,0,0.15);
+  
+  --font-title: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --color-title: #1f2937;
+  
+  --bg-badge: #f3f4f6;
+  --border-badge: 1px solid #e5e7eb;
+  --color-badge: #4b5563;
+  --rad-badge: 8px;
+  
+  --bg-track: #f9fafb;
+  --rad-track: 16px;
+  --mask-edge: rgba(255,255,255,0.9);
+  
+  --border-sel: 3px solid #3b82f6;
+  --shadow-sel: 0 4px 12px rgba(59,130,246,0.2);
+  --color-arrow: #3b82f6;
+  --rad-sel: 14px;
+  
+  --bg-card: #ffffff;
+  --border-card: 1px solid #f3f4f6;
+  --rad-card: 14px;
+  --shadow-card: 0 4px 12px rgba(0,0,0,0.04);
+  
+  --font-num: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body.theme-3 {
+  /* Theme 3: Retro Arcade */
+  --bg-panel: #000000;
+  --border-panel: 4px solid #39ff14;
+  --rad-panel: 0px;
+  --shadow-panel: 0 0 20px rgba(57,255,20,0.2);
+  
+  --font-title: 'Courier New', Courier, monospace;
+  --color-title: #39ff14;
+  
+  --bg-badge: #000;
+  --border-badge: 2px solid #39ff14;
+  --color-badge: #39ff14;
+  --rad-badge: 0px;
+  
+  --bg-track: #111;
+  --rad-track: 0px;
+  --mask-edge: #000;
+  
+  --border-sel: 4px solid #ff00ff;
+  --shadow-sel: 0 0 15px #ff00ff;
+  --color-arrow: #ff00ff;
+  --rad-sel: 0px;
+  
+  --bg-card: #000;
+  --border-card: 2px solid #444;
+  --rad-card: 0px;
+  --shadow-card: none;
+  
+  --font-num: 'Courier New', Courier, monospace;
+}
+
 #spin-overlay {
-  width: 560px;
-  background: #111;
-  border-radius: 16px;
+  width: 580px;
+  background: var(--bg-panel);
+  border: var(--border-panel);
+  border-radius: var(--rad-panel);
+  box-shadow: var(--shadow-panel);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 20px 20px 22px;
+  padding: 18px 20px 20px;
   opacity: 0;
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(12px) scale(0.97);
   pointer-events: none;
-  transition: opacity .28s, transform .28s;
+  transition: opacity .32s, transform .32s, background .32s, border-color .32s, box-shadow .32s;
 }
 #spin-overlay.visible {
   opacity: 1;
@@ -39,152 +137,281 @@ html, body {
   justify-content: space-between;
 }
 #spin-title {
-  font-size: 12px;
-  font-weight: 600;
+  font-family: var(--font-title);
+  font-size: 14px;
+  font-weight: 900;
   letter-spacing: 3px;
-  color: #555;
+  color: var(--color-title);
   text-transform: uppercase;
+  transition: color 0.3s, text-shadow 0.3s;
 }
 #spin-badge {
+  font-family: var(--font-title);
   font-size: 11px;
-  color: #444;
+  font-weight: bold;
+  color: var(--color-badge);
   letter-spacing: 1px;
-  background: #1a1a1a;
-  border-radius: 20px;
-  padding: 3px 12px;
+  background: var(--bg-badge);
+  border: var(--border-badge);
+  border-radius: var(--rad-badge);
+  padding: 4px 12px;
 }
 #spin-track-wrap {
   width: 100%;
-  height: 120px;
+  height: 136px;
   overflow: hidden;
   position: relative;
-  border-radius: 12px;
-  background: #0a0a0a;
+  border-radius: var(--rad-track);
+  background: var(--bg-track);
 }
 #spin-track-wrap::before,
 #spin-track-wrap::after {
   content: '';
   position: absolute;
   top: 0; bottom: 0;
-  width: 110px;
+  width: 120px;
   z-index: 2;
   pointer-events: none;
 }
 #spin-track-wrap::before {
   left: 0;
-  background: linear-gradient(to right, #0a0a0a, transparent);
+  background: linear-gradient(to right, var(--mask-edge), transparent);
 }
 #spin-track-wrap::after {
   right: 0;
-  background: linear-gradient(to left, #0a0a0a, transparent);
+  background: linear-gradient(to left, var(--mask-edge), transparent);
 }
 #spin-selector {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 90px;
-  height: 100px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 10px;
+  width: 96px;
+  height: 112px;
+  border: var(--border-sel); 
+  border-radius: var(--rad-sel);
   z-index: 10;
   pointer-events: none;
+  box-shadow: var(--shadow-sel);
 }
 #spin-selector::before {
-  content: '▾';
+  content: '▼';
   position: absolute;
-  top: -15px; left: 50%;
+  top: -18px; left: 50%;
   transform: translateX(-50%);
-  color: #333;
-  font-size: 12px;
+  color: var(--color-arrow);
+  font-size: 11px;
+  text-shadow: 0 0 8px var(--color-arrow);
 }
 #spin-selector::after {
-  content: '▴';
+  content: '▲';
   position: absolute;
-  bottom: -15px; left: 50%;
+  bottom: -18px; left: 50%;
   transform: translateX(-50%);
-  color: #333;
-  font-size: 12px;
+  color: var(--color-arrow);
+  font-size: 11px;
+  text-shadow: 0 0 8px var(--color-arrow);
 }
 #spin-track {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 0;
   position: absolute;
   top: 50%;
-  left: 0;
+  left: 0; 
   transform: translateY(-50%) translateX(0);
   will-change: transform;
 }
 .spin-card {
-  min-width: 90px;
-  height: 100px;
-  border-radius: 10px;
+  min-width: 96px;
+  height: 112px;
+  border-radius: var(--rad-card);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  background: #181818;
+  gap: 6px;
+  border: var(--border-card);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
   flex-shrink: 0;
-  transition: transform .2s, background .2s;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
 }
-.spin-card .ci { font-size: 13px; line-height: 1; color: #333; }
+.spin-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.07), transparent 60%);
+  pointer-events: none;
+}
+body.theme-2 .spin-card::before { display: none; }
+body.theme-3 .spin-card::before { display: none; }
+
+.spin-card .ci { font-size: 20px; line-height: 1; z-index:1; }
 .spin-card .cn {
-  font-size: 30px; font-weight: 700; line-height: 1;
-  color: #e0e0e0;
+  font-family: var(--font-num);
+  font-size: 32px; font-weight: 900; line-height: 1;
+  z-index: 1;
 }
 .spin-card .cl {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  color: #383838;
+  font-family: var(--font-num);
+  font-size: 10px; font-weight: 900;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  z-index: 1;
 }
+
+/* Base colors (Theme 1 default) */
+.spin-card.up .ci, .spin-card.up .cn { color: #a855f7; text-shadow: 0 0 18px rgba(168,85,247,0.6); }
+.spin-card.up .cl { background: #6d28d9; color: #fff; }
+.spin-card.down .ci, .spin-card.down .cn { color: #ef4444; text-shadow: 0 0 18px rgba(239,68,68,0.6); }
+.spin-card.down .cl { background: #991b1b; color: #fff; }
+.spin-card.zero .ci, .spin-card.zero .cn { color: #64748b; }
+.spin-card.zero .cl { background: #1e293b; color: #94a3b8; }
+
+/* THEME 2 colors */
+body.theme-2 .spin-card.up .ci, body.theme-2 .spin-card.up .cn { color: #3b82f6; text-shadow: none; }
+body.theme-2 .spin-card.up .cl { background: #dbeafe; color: #1d4ed8; }
+body.theme-2 .spin-card.down .ci, body.theme-2 .spin-card.down .cn { color: #ef4444; text-shadow: none; }
+body.theme-2 .spin-card.down .cl { background: #fee2e2; color: #b91c1c; }
+body.theme-2 .spin-card.zero .ci, body.theme-2 .spin-card.zero .cn { color: #6b7280; text-shadow: none; }
+body.theme-2 .spin-card.zero .cl { background: #f3f4f6; color: #374151; }
+
+/* THEME 3 colors */
+body.theme-3 .spin-card.up .ci, body.theme-3 .spin-card.up .cn { color: #39ff14; text-shadow: 0 0 10px #39ff14; }
+body.theme-3 .spin-card.up .cl { background: #111; color: #39ff14; border: 1px solid #39ff14; border-radius: 0; }
+body.theme-3 .spin-card.down .ci, body.theme-3 .spin-card.down .cn { color: #ff0055; text-shadow: 0 0 10px #ff0055; }
+body.theme-3 .spin-card.down .cl { background: #111; color: #ff0055; border: 1px solid #ff0055; border-radius: 0; }
+body.theme-3 .spin-card.zero .ci, body.theme-3 .spin-card.zero .cn { color: #aaa; text-shadow: none; }
+body.theme-3 .spin-card.zero .cl { background: #111; color: #aaa; border: 1px solid #aaa; border-radius: 0; }
+
+
+/* WIN CARD HIGHLIGHT */
 .spin-card.win-card {
-  background: #1e1e1e;
   transform: scale(1.06);
+  background: rgba(20,12,40,0.97);
 }
-.spin-card.win-card .cn { color: #fff; }
-.spin-card.win-card .ci { color: #555; }
-.spin-card.win-card .cl { color: #555; }
+.spin-card.win-card.up {
+  border-color: rgba(168,85,247,0.6);
+  box-shadow: 0 0 0 1px rgba(168,85,247,0.3), 0 0 30px rgba(168,85,247,0.45), inset 0 0 18px rgba(168,85,247,0.06);
+}
+.spin-card.win-card.down {
+  border-color: rgba(239,68,68,0.55);
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.3), 0 0 30px rgba(239,68,68,0.35), inset 0 0 18px rgba(239,68,68,0.04);
+}
+.spin-card.win-card.zero {
+  border-color: rgba(100,116,139,0.55);
+  box-shadow: 0 0 0 1px rgba(100,116,139,0.3), 0 0 30px rgba(100,116,139,0.35);
+}
+
+/* Theme 2 Highlight */
+body.theme-2 .spin-card.win-card {
+  background: #fff;
+}
+body.theme-2 .spin-card.win-card.up {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f6, 0 10px 25px rgba(59,130,246,0.3);
+}
+body.theme-2 .spin-card.win-card.down {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px #ef4444, 0 10px 25px rgba(239,68,68,0.3);
+}
+body.theme-2 .spin-card.win-card.zero {
+  border-color: #6b7280;
+  box-shadow: 0 0 0 2px #6b7280, 0 10px 25px rgba(107,114,128,0.2);
+}
+
+/* Theme 3 Highlight */
+body.theme-3 .spin-card.win-card {
+  background: #1a1a1a;
+}
+body.theme-3 .spin-card.win-card.up {
+  border-color: #39ff14;
+  box-shadow: 0 0 0 2px #39ff14, 0 0 25px rgba(57,255,20,0.5);
+}
+body.theme-3 .spin-card.win-card.down {
+  border-color: #ff0055;
+  box-shadow: 0 0 0 2px #ff0055, 0 0 25px rgba(255,0,85,0.5);
+}
+body.theme-3 .spin-card.win-card.zero {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 0 20px rgba(255,255,255,0.3);
+}
+
 #spin-result {
-  font-size: 24px;
-  font-weight: 700;
+  font-family: var(--font-title);
+  font-size: 26px; font-weight: 900;
   letter-spacing: 2px;
-  min-height: 32px;
-  color: #e0e0e0;
+  min-height: 36px;
   opacity: 0;
-  transform: scale(0.7) translateY(4px);
-  transition: opacity .35s cubic-bezier(.34,1.56,.64,1),
-              transform .35s cubic-bezier(.34,1.56,.64,1);
+  transform: scale(0.5) translateY(6px);
+  transition: opacity .38s cubic-bezier(.34,1.56,.64,1),
+              transform .38s cubic-bezier(.34,1.56,.64,1),
+              color 0.3s, text-shadow 0.3s;
 }
 #spin-result.show {
   opacity: 1;
   transform: scale(1) translateY(0);
 }
+
+/* Result Texts Default */
+#spin-result.res-up, #spin-title.res-up { color: #c084fc; text-shadow: 0 0 28px #c084fc; }
+#spin-result.res-down, #spin-title.res-down { color: #f87171; text-shadow: 0 0 28px #f87171; }
+#spin-result.res-zero, #spin-title.res-zero { color: #94a3b8; text-shadow: 0 0 28px #94a3b8; }
+
+/* Result Texts Theme 2 */
+body.theme-2 #spin-result.res-up, body.theme-2 #spin-title.res-up { color: #3b82f6; text-shadow: none; }
+body.theme-2 #spin-result.res-down, body.theme-2 #spin-title.res-down { color: #ef4444; text-shadow: none; }
+body.theme-2 #spin-result.res-zero, body.theme-2 #spin-title.res-zero { color: #6b7280; text-shadow: none; }
+
+/* Result Texts Theme 3 */
+body.theme-3 #spin-result.res-up, body.theme-3 #spin-title.res-up { color: #39ff14; text-shadow: 0 0 10px #39ff14; }
+body.theme-3 #spin-result.res-down, body.theme-3 #spin-title.res-down { color: #ff0055; text-shadow: 0 0 10px #ff0055; }
+body.theme-3 #spin-result.res-zero, body.theme-3 #spin-title.res-zero { color: #aaa; text-shadow: none; }
+
 #spin-pool-row {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
 }
 .pool-chip {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 11px;
-  border-radius: 6px;
+  font-family: var(--font-num);
+  font-size: 12px; font-weight: 900;
+  padding: 4px 12px;
+  border-radius: 8px;
   letter-spacing: 0.5px;
-  color: #444;
-  background: #181818;
+  opacity: 0.7;
+  transition: opacity .15s, transform .15s;
 }
+
+/* Pool Chips Default */
+.pool-chip.up   { background: rgba(109,40,217,0.3); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+.pool-chip.down { background: rgba(153,27,27,0.3);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.pool-chip.zero { background: rgba(30,41,59,0.5);   color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+
+/* Pool Chips Theme 2 */
+body.theme-2 .pool-chip.up   { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+body.theme-2 .pool-chip.down { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+body.theme-2 .pool-chip.zero { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+
+/* Pool Chips Theme 3 */
+body.theme-3 .pool-chip { border-radius: 0; }
+body.theme-3 .pool-chip.up   { background: #000; color: #39ff14; border: 1px solid #39ff14; }
+body.theme-3 .pool-chip.down { background: #000; color: #ff0055; border: 1px solid #ff0055; }
+body.theme-3 .pool-chip.zero { background: #000; color: #aaa; border: 1px solid #aaa; }
+
 </style>
 </head>
 <body>
 <div id="spin-overlay">
   <div id="spin-header">
-    <div id="spin-title">Spin</div>
-    <div id="spin-badge">Ready</div>
+    <div id="spin-title">SPIN WHEEL</div>
+    <div id="spin-badge">READY</div>
   </div>
   <div id="spin-pool-row"></div>
   <div style="position:relative;width:100%;">
@@ -197,9 +424,16 @@ html, body {
 </div>
 
 <script>
-let lastSeq = -1;
-let isAnim  = false;
-let lastPool = '';
+let lastSeq   = -1;
+let isAnim    = false;
+let lastPool  = '';
+let currentTemplate = -1;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audio System
+// ─────────────────────────────────────────────────────────────────────────────
+const spinSound = new Audio('../assets/spin.mp3');
+const winSound  = new Audio('../assets/win.mp3');
 
 function makeCard(val, winner) {
   const card = document.createElement('div');
@@ -236,7 +470,7 @@ function runReel(result, pool, onDone) {
   const track  = document.getElementById('spin-track');
   const resEl  = document.getElementById('spin-result');
   const title  = document.getElementById('spin-title');
-  const badge  = document.getElementById('spin-badge');
+  const badge = document.getElementById('spin-badge');
   const wrap   = document.getElementById('spin-track-wrap');
 
   track.innerHTML = '';
@@ -244,20 +478,26 @@ function runReel(result, pool, onDone) {
   resEl.textContent = '—';
 
   const { deck, win } = buildDeck(result, pool);
-  deck.forEach(v => track.appendChild(makeCard(v, false)));
+  deck.forEach((v, i) => track.appendChild(makeCard(v, false))); 
 
-  const cardWidth = 90;
-  const gap = 8;
+  const cardWidth = 96; 
+  const gap = 10;
   const step = cardWidth + gap;
+  
   const centerOffset = (wrap.offsetWidth / 2) - (cardWidth / 2);
 
   track.style.transition = 'none';
   track.style.transform  = `translateY(-50%) translateX(${centerOffset}px)`;
 
+  // Play spin sound
+  spinSound.currentTime = 0;
+  spinSound.play().catch(e => console.warn('Audio blocked:', e));
+
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       track.style.transition = 'transform 2.6s cubic-bezier(0.15, 1, 0.3, 1)';
-      track.style.transform  = `translateY(-50%) translateX(${centerOffset - win * step}px)`;
+      const finalX = centerOffset - (win * step);
+      track.style.transform  = `translateY(-50%) translateX(${finalX}px)`;
     });
   });
 
@@ -265,12 +505,21 @@ function runReel(result, pool, onDone) {
     const targetCard = track.children[win];
     if (targetCard) targetCard.classList.add('win-card');
 
-    const sign = result > 0 ? '+' : '';
-    resEl.textContent = sign + result + (result > 0 ? ' ▲' : result < 0 ? ' ▼' : '');
-    resEl.classList.add('show');
+    // Stop spin sound and play win sound
+    spinSound.pause();
+    winSound.currentTime = 0;
+    winSound.play().catch(e => console.warn('Audio blocked:', e));
 
+    const sign  = result > 0 ? '+' : '';
+    const resCls = result > 0 ? 'res-up' : result < 0 ? 'res-down' : 'res-zero';
+
+    resEl.className = 'show ' + resCls;
+    resEl.textContent = sign + result + (result > 0 ? ' ▲ WIN' : result < 0 ? ' ▼ LOSE' : ' — ZERO');
+
+    title.className = resCls;
     title.textContent = result > 0 ? '▲ WIN ' + Math.abs(result) : result < 0 ? '▼ WIN ' + Math.abs(result) : '— ZERO';
-    badge.textContent = 'Done';
+
+    badge.textContent = 'DONE!';
 
     setTimeout(() => { if (onDone) onDone(); }, 1100);
   }, 2800);
@@ -281,10 +530,12 @@ function renderPool(pool) {
   const key = pool.join(',');
   if (key === lastPool) return;
   lastPool = key;
+
   row.innerHTML = '';
   pool.forEach(v => {
     const chip = document.createElement('div');
-    chip.className = 'pool-chip';
+    chip.className = 'pool-chip ' + (v > 0 ? 'up' : v < 0 ? 'down' : 'zero');
+    chip.dataset.val = String(v);
     chip.textContent = (v > 0 ? '+' : '') + v;
     row.appendChild(chip);
   });
@@ -292,6 +543,13 @@ function renderPool(pool) {
 
 function update(s) {
   if (!s) return;
+  const tplMap = { 'T1': 1, 'T2': 2, 'T3': 3 };
+  const tpl = tplMap[s.template] || 1;
+  if (tpl !== currentTemplate) {
+    currentTemplate = tpl;
+    document.body.className = tpl === 1 ? '' : 'theme-' + tpl;
+  }
+
   const ov    = document.getElementById('spin-overlay');
   const badge = document.getElementById('spin-badge');
   const title = document.getElementById('spin-title');
@@ -309,20 +567,25 @@ function update(s) {
     lastSeq = seq;
     isAnim  = true;
     ov.classList.add('visible');
-    title.textContent = 'SPIN';
-    badge.textContent = 'Go';
+
+    title.className = '';
+    title.textContent = 'SPINNING...';
+    badge.textContent = 'GO!';
 
     runReel(s.spinResult || 0, pool, () => {
       setTimeout(() => {
         ov.classList.remove('visible');
-        badge.textContent = 'Ready';
-        title.textContent = 'Spin';
+        badge.textContent = 'READY';
+        title.className = '';
+        title.textContent = 'SPIN WHEEL';
         isAnim = false;
       }, 2000);
     });
   }
 }
-
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'UPDATE_SETTINGS') update(e.data.settings);
+});
 window.addEventListener('storage', () => {
   const saved = localStorage.getItem('aclass_overlay_settings');
   if (saved) update(JSON.parse(saved));
@@ -336,6 +599,13 @@ window.addEventListener('message', (e) => {
 
 const saved = localStorage.getItem('aclass_overlay_settings');
 if (saved) update(JSON.parse(saved));
+
+function connectSSE() {
+  const es = new EventSource("http://localhost:5555/events", { withCredentials: false });
+  es.onmessage = (e) => { try { update(JSON.parse(e.data)); } catch (err) {} };
+  es.onerror = () => { es.close(); setTimeout(connectSSE, 3000); };
+}
+connectSSE();
 </script>
 </body>
 </html>

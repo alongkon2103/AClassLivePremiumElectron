@@ -3,17 +3,18 @@ directories:
   buildResources: build
 appId: com.aclassstore.livepro
 productName: AClassLivePro
-win:
-  target:
-    - nsis
-  icon: build/icon.ico
-  artifactName: ${productName}_Setup_${version}.${ext}
 mac:
   target:
     - target: dmg
       arch:
         - x64
+  icon: build/icon.icns
+  artifactName: ${productName}_${version}_mac.${ext}
+win:
+  target:
+    - nsis
   icon: build/icon.ico
+  artifactName: ${productName}_Setup_${version}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -22,6 +23,10 @@ nsis:
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   uninstallDisplayName: A Class Live Pro
+  perMachine: false
+  allowElevation: true
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
 publish:
   - provider: github
     owner: alongkon2103
