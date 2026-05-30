@@ -451,13 +451,10 @@ function createMainWindow() {
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
 
-  const session = mainWindow.webContents.session;
-  session.clearStorageData()
-    .then(() => mainWindow.loadURL(WEB_URL))
-    .catch(() => {
-      const indexPath = path.join(__dirname, '../dist/index.html');
-      if (fs.existsSync(indexPath)) mainWindow.loadFile(indexPath);
-    });
+  mainWindow.loadURL(WEB_URL).catch(() => {
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    if (fs.existsSync(indexPath)) mainWindow.loadFile(indexPath);
+  });
 
   if (isDev) {
     mainWindow.webContents.openDevTools();
