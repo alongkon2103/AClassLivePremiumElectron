@@ -2,7 +2,6 @@ node_modules/
 out/
 release/
 dist-build/
-dist/
 *.exe
 *.zip
 *.dmg
