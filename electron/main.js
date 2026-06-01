@@ -50,6 +50,7 @@ if (fs.existsSync(dotEnvPath)) {
 
 const WEB_URL = process.env.WEB_URL || 'https://app.aclassstore.com';
 const PRODUCTION_API_URL = process.env.PRODUCTION_API_URL || 'https://api.aclassstore.com';
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://backend.aclassstore.com';
 
 const { machineIdSync } = require('node-machine-id');
 const { Rcon } = require('rcon-client');
@@ -575,7 +576,7 @@ app.whenReady().then(() => {
   ipcMain.handle('interactive:register-session', async (event, { orderId, username, token }) => {
     const axios = require('axios');
     const response = await axios.post(
-      `${PRODUCTION_API_URL}/register`,
+      `${BACKEND_API_URL}/interactive/register-session`, // ✅ แก้ตรงนี้
       { orderId, username },
       { headers: { 'Authorization': `Bearer ${token}` }, timeout: 10000 }
     );
