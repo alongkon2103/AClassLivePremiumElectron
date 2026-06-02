@@ -590,13 +590,27 @@ app.whenReady().then(() => {
   });
   autoUpdater.on('update-available', (info) => {
     console.log('[Updater] Update available:', info.version);
+    if (mainWindow) mainWindow.webContents.send('update:available', { version: info.version });
   });
   autoUpdater.on('update-not-available', (info) => {
     console.log('[Updater] Up to date:', info.version);
   });
+  autoUpdater.on('download-progress', (progress) => {
+    if (mainWindow) mainWindow.webContents.send('update:progress', progress);
+  });
+  autoUpdater.on('update-downloaded', () => {
+    console.log('[Updater] Downloaded');
+    if (mainWindow) mainWindow.webContents.send('update:downloaded');
+  });
   autoUpdater.on('error', (err) => {
     console.log('[Updater] Error:', err.message);
+    if (mainWindow) mainWindow.webContents.send('update:error', err.message);
   });
+
+  ipcMain.handle('update:install', () => {
+    autoUpdater.quitAndInstall();
+  });
+  
   createMainWindow();
   createOverlayWindow();
 
