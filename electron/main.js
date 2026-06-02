@@ -585,6 +585,18 @@ app.whenReady().then(() => {
 
   ipcMain.handle('hotkey:uiohookAvailable', () => uiohookRunning);
 
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[Updater] Checking for update...');
+  });
+  autoUpdater.on('update-available', (info) => {
+    console.log('[Updater] Update available:', info.version);
+  });
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('[Updater] Up to date:', info.version);
+  });
+  autoUpdater.on('error', (err) => {
+    console.log('[Updater] Error:', err.message);
+  });
   createMainWindow();
   createOverlayWindow();
 
@@ -627,22 +639,28 @@ ipcMain.on('tiktok:connect', async (event, { username, sessionId, idc, token, or
 
   try {
     tiktokService.stopConnection();
-    const orderId = (passedOrderId && passedOrderId !== 'undefined' && passedOrderId !== 'null') 
+    const orderId = (passedOrderId && passedOrderId !== 'undefined' && passedOrderId !== 'null')
       ? passedOrderId : null;
-    
+
     // Improved MiddlewareClient from stable project
     const middlewareClient = new MiddlewareClient(PRODUCTION_API_URL, token, username, orderId);
 
+    // const send = (channel, data) => {
+    //   if (mainWindow) mainWindow.webContents.send(channel, data);
+    //   if (overlayWindow) overlayWindow.webContents.send(channel, data);
+
+    //   // SSE ส่งเฉพาะ tiktok events (gift, chat, like, follow, stats)
+    //   // ไม่ส่ง status เพราะ overlay ใช้ settings จาก broadcastSettings แล้ว
+    //   const SSE_EVENTS = ['tiktok:gift', 'tiktok:chat', 'tiktok:like', 'tiktok:follow', 'tiktok:stats'];
+    //   if (sseClients.length > 0 && SSE_EVENTS.includes(channel)) {
+    //     sseClients.forEach(client => {
+    //       try { client.write(`data: ${JSON.stringify({ type: channel, ...data })}\n\n`); } catch (e) { }
+    //     });
+    //   }
+    // };
     const send = (channel, data) => {
       if (mainWindow) mainWindow.webContents.send(channel, data);
       if (overlayWindow) overlayWindow.webContents.send(channel, data);
-      
-      // Also broadcast via SSE for external browser sources (OBS)
-      if (sseClients.length > 0) {
-        sseClients.forEach(client => {
-          try { client.write(`data: ${JSON.stringify({ type: channel, ...data })}\n\n`); } catch (e) { }
-        });
-      }
     };
 
     const callbacks = {
@@ -650,26 +668,26 @@ ipcMain.on('tiktok:connect', async (event, { username, sessionId, idc, token, or
         console.log(`[IPC] Sending Status: ${connected} - ${message}`);
         send('tiktok:status', { connected, message, state: state || (connected ? 'LIVE' : 'OFFLINE') });
       },
-      onStats:   (data) => {
+      onStats: (data) => {
         console.log(`[IPC] Sending Stats:`, data);
-        send('tiktok:stats',  data);
+        send('tiktok:stats', data);
       },
-      onGift:    (data) => {
+      onGift: (data) => {
         console.log(`[IPC] Sending Gift: ${data.giftName} x${data.repeatCount}`);
-        send('tiktok:gift',   data);
+        send('tiktok:gift', data);
       },
-      onChat:    (data) => {
+      onChat: (data) => {
         console.log(`[IPC] Sending Chat: @${data.uniqueId || data.username}`);
-        send('tiktok:chat',   data);
+        send('tiktok:chat', data);
       },
-      onLike:    (data) => {
+      onLike: (data) => {
         console.log(`[IPC] Sending Like: ${data.likeCount}`);
-        send('tiktok:like',   data);
+        send('tiktok:like', data);
         if (data.totalLikeCount !== undefined) {
           send('tiktok:stats', { likeCount: data.totalLikeCount });
         }
       },
-      onFollow:  (data) => {
+      onFollow: (data) => {
         console.log(`[IPC] Sending Follow: @${data.uniqueId || data.username}`);
         send('tiktok:follow', data);
       },
@@ -679,11 +697,11 @@ ipcMain.on('tiktok:connect', async (event, { username, sessionId, idc, token, or
           return;
         }
 
-        const isFatal = 
-          (message.includes('401') || 
-           message.includes('unauthorized') ||
-           message.includes('UNAUTHORIZED') ||
-           message.includes('sessionid is invalid')) &&
+        const isFatal =
+          (message.includes('401') ||
+            message.includes('unauthorized') ||
+            message.includes('UNAUTHORIZED') ||
+            message.includes('sessionid is invalid')) &&
           !message.includes('falling back');
 
         if (isFatal) {
@@ -717,7 +735,7 @@ ipcMain.on('tiktok:connect', async (event, { username, sessionId, idc, token, or
         console.error('[Middleware] Register FAILED:', e.message);
         return;
       }
-      
+
     }
 
     // Try to get session if not provided or invalid
