@@ -576,7 +576,7 @@ app.whenReady().then(() => {
   ipcMain.handle('interactive:register-session', async (event, { orderId, username, token }) => {
     const axios = require('axios');
     const response = await axios.post(
-      `${BACKEND_API_URL}/interactive/register-session`, // ✅ แก้ตรงนี้
+      `${BACKEND_API_URL}/interactive/register-session`,
       { orderId, username },
       { headers: { 'Authorization': `Bearer ${token}` }, timeout: 10000 }
     );
@@ -616,22 +616,129 @@ ipcMain.on('overlay:toggle', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // TikTok
 // ─────────────────────────────────────────────────────────────────────────────
+let isStarting = false;
+
 ipcMain.on('tiktok:connect', async (event, { username, sessionId, idc, token, orderId: passedOrderId }) => {
-  tiktokService.stopConnection();
-  const orderId = (passedOrderId && passedOrderId !== 'undefined' && passedOrderId !== 'null') ? passedOrderId : null;
-  const middlewareClient = new MiddlewareClient(PRODUCTION_API_URL, token, username, orderId);
-  const callbacks = {
-    onStatus: (status) => { if (mainWindow) mainWindow.webContents.send('tiktok:status', status); },
-    onStats: (stats) => { if (mainWindow) mainWindow.webContents.send('tiktok:stats', stats); },
-    onEvent: (eventData) => { if (mainWindow) mainWindow.webContents.send('tiktok:event', eventData); },
-  };
-  if (orderId) await middlewareClient.register(orderId);
-  tiktokService.startConnection(username, middlewareClient, callbacks, { sessionid: sessionId, idc });
+  if (isStarting) {
+    console.log('[TikTok] Ignoring duplicate connect request');
+    return;
+  }
+  isStarting = true;
+
+  try {
+    tiktokService.stopConnection();
+    const orderId = (passedOrderId && passedOrderId !== 'undefined' && passedOrderId !== 'null') 
+      ? passedOrderId : null;
+    
+    // Improved MiddlewareClient from stable project
+    const middlewareClient = new MiddlewareClient(PRODUCTION_API_URL, token, username, orderId);
+
+    const send = (channel, data) => {
+      if (mainWindow) mainWindow.webContents.send(channel, data);
+      if (overlayWindow) overlayWindow.webContents.send(channel, data);
+      
+      // Also broadcast via SSE for external browser sources (OBS)
+      if (sseClients.length > 0) {
+        sseClients.forEach(client => {
+          try { client.write(`data: ${JSON.stringify({ type: channel, ...data })}\n\n`); } catch (e) { }
+        });
+      }
+    };
+
+    const callbacks = {
+      onStatus: (connected, message, state = null) => {
+        console.log(`[IPC] Sending Status: ${connected} - ${message}`);
+        send('tiktok:status', { connected, message, state: state || (connected ? 'LIVE' : 'OFFLINE') });
+      },
+      onStats:   (data) => {
+        console.log(`[IPC] Sending Stats:`, data);
+        send('tiktok:stats',  data);
+      },
+      onGift:    (data) => {
+        console.log(`[IPC] Sending Gift: ${data.giftName} x${data.repeatCount}`);
+        send('tiktok:gift',   data);
+      },
+      onChat:    (data) => {
+        console.log(`[IPC] Sending Chat: @${data.uniqueId || data.username}`);
+        send('tiktok:chat',   data);
+      },
+      onLike:    (data) => {
+        console.log(`[IPC] Sending Like: ${data.likeCount}`);
+        send('tiktok:like',   data);
+        if (data.totalLikeCount !== undefined) {
+          send('tiktok:stats', { likeCount: data.totalLikeCount });
+        }
+      },
+      onFollow:  (data) => {
+        console.log(`[IPC] Sending Follow: @${data.uniqueId || data.username}`);
+        send('tiktok:follow', data);
+      },
+      onError: async (message) => {
+        // Ignore "Unexpected server response: 200" as it's a non-fatal fallback message
+        if (message.includes('Unexpected server response: 200')) {
+          return;
+        }
+
+        const isFatal = 
+          (message.includes('401') || 
+           message.includes('unauthorized') ||
+           message.includes('UNAUTHORIZED') ||
+           message.includes('sessionid is invalid')) &&
+          !message.includes('falling back');
+
+        if (isFatal) {
+          console.warn('[TikTok] Fatal session error detected, re-logging...');
+          tiktokAuth.clearSessionId();
+          tiktokService.stopConnection();
+
+          try {
+            send('tiktok:status', { connected: false, message: 'Session หมดอายุ กำลัง login ใหม่...', state: 'WAIT' });
+            const newSession = await tiktokAuth.getTikTokSessionId();
+            tiktokService.startConnection(username, middlewareClient, callbacks, newSession);
+          } catch (err) {
+            send('tiktok:status', { connected: false, message: 'Login ไม่สำเร็จ กรุณา connect ใหม่', state: 'OFFLINE' });
+          }
+          return;
+        }
+
+        if (mainWindow) mainWindow.webContents.send('tiktok:error', message);
+      }
+    };
+
+    if (orderId) {
+      try {
+        const registered = await middlewareClient.register();
+        if (!registered) {
+          send('tiktok:status', { connected: false, message: 'Connection rejected by server (Token revoked)', state: 'OFFLINE' });
+          return;
+        }
+        console.log('[Middleware] Register OK:', orderId);
+      } catch (e) {
+        console.error('[Middleware] Register FAILED:', e.message);
+        return;
+      }
+      
+    }
+
+    // Try to get session if not provided or invalid
+    let sessionToUse = (sessionId && idc) ? { sessionid: sessionId, idc } : null;
+    if (!sessionToUse) {
+      try {
+        sessionToUse = await tiktokAuth.getOrRequestSessionId();
+      } catch (e) {
+        console.warn('[TikTok] No session found, connecting as guest');
+      }
+    }
+
+    tiktokService.startConnection(username, middlewareClient, callbacks, sessionToUse);
+  } finally {
+    isStarting = false;
+  }
 });
 
 ipcMain.on('tiktok:disconnect', () => {
   tiktokService.stopConnection();
-  if (mainWindow) mainWindow.webContents.send('tiktok:status', { connected: false });
+  if (mainWindow) mainWindow.webContents.send('tiktok:status', { connected: false, message: 'Disconnected', state: 'OFFLINE' });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -663,3 +770,6 @@ ipcMain.on('keyboard:press', async (event, keyName) => {
     if (modifierKeys.length > 0) await keyboard.releaseKey(...modifierKeys);
   } catch (error) { }
 });
+
+
+

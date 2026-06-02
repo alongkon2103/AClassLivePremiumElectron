@@ -20,7 +20,6 @@ function loadSessionId() {
   }
 }
 
-// ✅ เพิ่ม clearSessionId กลับมา
 function clearSessionId() {
   try { fs.unlinkSync(getStorePath()); } catch (e) { }
 }
@@ -57,13 +56,8 @@ function getTikTokSessionId() {
           url: 'https://www.tiktok.com',
         });
 
-        console.log('[Cookies found]', cookies.map(c => c.name));
-
         const sessionCookie = cookies.find(c => c.name === 'sessionid');
         const idcCookie = cookies.find(c => c.name === 'tt-target-idc');
-
-        console.log('[sessionid]', sessionCookie?.value ? 'found' : 'not found');
-        console.log('[tt-target-idc]', idcCookie?.value ? 'found' : 'not found');
 
         if (sessionCookie?.value && idcCookie?.value) {
           resolved = true;
@@ -86,7 +80,6 @@ function getTikTokSessionId() {
   });
 }
 
-// ✅ เหลืออันเดียว
 async function getOrRequestSessionId() {
   const saved = loadSessionId();
   if (saved) {
