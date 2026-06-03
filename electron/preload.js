@@ -55,6 +55,8 @@ contextBridge.exposeInMainWorld('electron', {
       'update:install',
       'auth:open-external',
       'hotkey:uiohookAvailable', // เช็คว่า uiohook พร้อมใช้ไหม
+      'os:getLocale',         // ดึง locale ของเครื่อง (เช่น "en-US", "th-TH") เพื่อใช้เป็นภาษาเริ่มต้น
+      'app:restart',          // ปิดและเปิดโปรแกรมใหม่ (relaunch + exit)
     ];
     if (!validChannels.includes(channel)) {
       throw new Error(`Invalid IPC channel: ${channel}`);

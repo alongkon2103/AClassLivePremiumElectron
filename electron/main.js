@@ -778,6 +778,18 @@ ipcMain.on('tiktok:disconnect', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 ipcMain.handle('heartbeat:check', () => true);
 ipcMain.handle('get-hwid', () => { try { return machineIdSync(); } catch { return 'unknown-hwid'; } });
+ipcMain.handle('os:getLocale', () => {
+  try {
+    return app.getLocale() || app.getSystemLocale?.() || 'en';
+  } catch {
+    return 'en';
+  }
+});
+
+ipcMain.handle('app:restart', () => {
+  app.relaunch();
+  app.exit(0);
+});
 
 ipcMain.handle('rcon:send', async (event, { host, port, password, command }) => {
   const rcon = await Rcon.connect({ host, port: parseInt(port), password });
