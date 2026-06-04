@@ -52,6 +52,13 @@ const WEB_URL = process.env.WEB_URL || 'https://app.aclassstore.com';
 const PRODUCTION_API_URL = process.env.PRODUCTION_API_URL || 'https://api.aclassstore.com';
 const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://backend.aclassstore.com';
 
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log(`[boot] isDev=${isDev}  NODE_ENV=${process.env.NODE_ENV}`);
+console.log(`[boot] WEB_URL         = ${WEB_URL}`);
+console.log(`[boot] BACKEND_API_URL = ${BACKEND_API_URL}`);
+console.log(`[boot] PRODUCTION_API_URL = ${PRODUCTION_API_URL}`);
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
 const { machineIdSync } = require('node-machine-id');
 const { Rcon } = require('rcon-client');
 const { autoUpdater } = require('electron-updater');
@@ -229,33 +236,62 @@ function fingerprint(keycode, ctrlKey, altKey, shiftKey, metaKey) {
 // Active bindings: Map<fingerprint, { action, val }>
 let activeBindings = new Map();
 
+// Keep a snapshot of the last registration so we can re-send it to a newly
+// opened renderer (e.g. when the Debug Panel mounts) without waiting for the
+// next settings save.
+let lastRegisteredSnapshot = null;
+let lastRegisterLogAt = 0;
+
+function broadcastRegistered(snapshot) {
+  lastRegisteredSnapshot = snapshot;
+  if (mainWindow) mainWindow.webContents.send('hotkey:registered', snapshot);
+  if (overlayWindow) overlayWindow.webContents.send('hotkey:registered', snapshot);
+}
+
 function registerHotkeys(settings) {
   activeBindings.clear();
   // Only keep the DevTools shortcut in globalShortcut; clear everything else
   // We don't call globalShortcut.unregisterAll() so DevTools stays registered
-  if (!settings || (!settings.winEnabled && !settings.spinEnabled)) return;
+  if (!settings || (!settings.winEnabled && !settings.spinEnabled)) {
+    broadcastRegistered({ count: 0, bindings: [], reason: 'master_switch_off' });
+    return;
+  }
 
   const hotkeys = settings.hotkeys || {};
+  const summary = [];
 
-  const bind = (keyDef, action, val) => {
-    if (!keyDef) return;
-    // keyDef is always a string from existing settings
+  const bind = (label, keyDef, action, val) => {
+    if (!keyDef) {
+      summary.push({ label, key: null, action, val, status: 'empty' });
+      return;
+    }
     const key = typeof keyDef === 'string' ? keyDef : keyDef.key ?? keyDef.label ?? String(keyDef);
     const parsed = parseHotkeyString(key);
-    if (!parsed) return;
+    if (!parsed) {
+      summary.push({ label, key, action, val, status: 'unresolved' });
+      return;
+    }
     const fp = fingerprint(parsed.keycode, parsed.ctrlKey, parsed.altKey, parsed.shiftKey, parsed.metaKey);
     activeBindings.set(fp, { action, val });
+    summary.push({ label, key, action, val, status: 'active', keycode: parsed.keycode });
   };
 
-  bind(hotkeys.win, 'hotkey:win-adjust', 1);
-  bind(hotkeys.undo, 'hotkey:win-adjust', -1);
-  bind(hotkeys.reset, 'hotkey:win-adjust', 'reset');
-  bind(hotkeys.spin, 'hotkey:spin-trigger', true);
-  if (hotkeys.custom1) bind(hotkeys.custom1.key, 'hotkey:win-adjust', hotkeys.custom1.value);
-  if (hotkeys.custom2) bind(hotkeys.custom2.key, 'hotkey:win-adjust', hotkeys.custom2.value);
-  if (hotkeys.custom3) bind(hotkeys.custom3.key, 'hotkey:win-adjust', hotkeys.custom3.value);
+  bind('WIN', hotkeys.win, 'hotkey:win-adjust', 1);
+  bind('UNDO', hotkeys.undo, 'hotkey:win-adjust', -1);
+  bind('RESET', hotkeys.reset, 'hotkey:win-adjust', 'reset');
+  bind('SPIN', hotkeys.spin, 'hotkey:spin-trigger', true);
+  if (hotkeys.custom1) bind('Custom 1', hotkeys.custom1.key, 'hotkey:win-adjust', hotkeys.custom1.value);
+  if (hotkeys.custom2) bind('Custom 2', hotkeys.custom2.key, 'hotkey:win-adjust', hotkeys.custom2.value);
+  if (hotkeys.custom3) bind('Custom 3', hotkeys.custom3.key, 'hotkey:win-adjust', hotkeys.custom3.value);
 
-  console.log('[uiohook] Registered', activeBindings.size, 'hotkey(s)');
+  // Rate-limit the console log so rapid settings:save bursts don't spam stdout
+  const now = Date.now();
+  if (now - lastRegisterLogAt > 1000) {
+    console.log('[uiohook] Registered', activeBindings.size, 'hotkey(s)');
+    lastRegisterLogAt = now;
+  }
+
+  broadcastRegistered({ count: activeBindings.size, bindings: summary });
 }
 
 function startUiohook() {
@@ -435,6 +471,34 @@ function resolveNutKey(keyStr) {
   return Key[keyStr];
 }
 
+async function loadMainWindowContent() {
+  if (!mainWindow) return;
+  if (isDev) {
+    // Dev mode: keep retrying the Vite dev server. Falling back to a stale
+    // bundled dist/index.html silently masks real updates, so we never do it.
+    const maxAttempts = 30;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await mainWindow.loadURL(WEB_URL);
+        return;
+      } catch (err) {
+        if (attempt === maxAttempts) {
+          console.error(`[main] Could not reach ${WEB_URL} after ${maxAttempts} attempts:`, err?.message);
+          return;
+        }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    return;
+  }
+  try {
+    await mainWindow.loadURL(WEB_URL);
+  } catch {
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    if (fs.existsSync(indexPath)) mainWindow.loadFile(indexPath);
+  }
+}
+
 function createMainWindow() {
   const preloadPath = path.join(__dirname, 'preload.js');
   mainWindow = new BrowserWindow({
@@ -452,10 +516,7 @@ function createMainWindow() {
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
 
-  mainWindow.loadURL(WEB_URL).catch(() => {
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    if (fs.existsSync(indexPath)) mainWindow.loadFile(indexPath);
-  });
+  loadMainWindowContent();
 
   if (isDev) {
     mainWindow.webContents.openDevTools();

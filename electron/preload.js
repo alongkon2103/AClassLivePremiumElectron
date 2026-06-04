@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('electron', {
       'hotkey:win-adjust',
       'hotkey:spin-trigger',
       'hotkey:rawkey',        // รับ raw keycode จาก uiohook (ใช้ตอน assign hotkey)
+      'hotkey:registered',    // รับสรุป hotkey ที่ลงทะเบียนตอนนี้ (ใช้ใน Debug Panel)
       'update:available',
       'update:progress',
       'update:downloaded',
